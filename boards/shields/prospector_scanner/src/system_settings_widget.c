@@ -6,6 +6,7 @@
 
 #include "system_settings_widget.h"
 #include "display_settings.h"
+#include "fonts.h"
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/reboot.h>
 
@@ -196,7 +197,7 @@ static lv_obj_t *create_styled_button(lv_obj_t *parent, const char *text,
     lv_obj_t *label = lv_label_create(btn);
     lv_label_set_text(label, text);
     lv_obj_set_style_text_color(label, lv_color_hex(0xFFFFFF), LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(label, &lv_font_montserrat_18, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(label, &JetBrainsMono_Regular_18, LV_STATE_DEFAULT);
     lv_obj_center(label);
 
     return btn;
@@ -235,14 +236,14 @@ int zmk_widget_system_settings_init(struct zmk_widget_system_settings *widget, l
     widget->title_label = lv_label_create(widget->obj);
     lv_label_set_text(widget->title_label, "Quick Actions");
     lv_obj_set_style_text_color(widget->title_label, lv_color_hex(0xFFFFFF), LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(widget->title_label, &lv_font_montserrat_20, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(widget->title_label, &JetBrainsMono_Regular_20, LV_STATE_DEFAULT);
     lv_obj_align(widget->title_label, LV_ALIGN_TOP_MID, 0, 15);
 
     // Version label (below title)
     lv_obj_t *version_label = lv_label_create(widget->obj);
     lv_label_set_text(version_label, "v2.2b");
     lv_obj_set_style_text_color(version_label, lv_color_hex(0x888888), LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(version_label, &lv_font_montserrat_12, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(version_label, &JetBrainsMono_Regular_12, LV_STATE_DEFAULT);
     lv_obj_align(version_label, LV_ALIGN_TOP_MID, 0, 40);
 
     LOG_INF("✅ Title and version labels created");
@@ -296,13 +297,13 @@ int zmk_widget_system_settings_init(struct zmk_widget_system_settings *widget, l
     widget->channel_label = lv_label_create(widget->obj);
     lv_label_set_text(widget->channel_label, "Channel:");
     lv_obj_set_style_text_color(widget->channel_label, lv_color_hex(0xAAAAAA), LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(widget->channel_label, &lv_font_montserrat_16, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(widget->channel_label, &JetBrainsMono_Regular_16, LV_STATE_DEFAULT);
     lv_obj_align(widget->channel_label, LV_ALIGN_BOTTOM_MID, -60, -50);
 
     // Channel value display
     widget->channel_value = lv_label_create(widget->obj);
     lv_obj_set_style_text_color(widget->channel_value, lv_color_hex(0x4A90E2), LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(widget->channel_value, &lv_font_montserrat_20, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(widget->channel_value, &JetBrainsMono_Regular_20, LV_STATE_DEFAULT);
     lv_obj_set_width(widget->channel_value, 50);
     lv_obj_set_style_text_align(widget->channel_value, LV_TEXT_ALIGN_CENTER, LV_STATE_DEFAULT);
     lv_obj_align(widget->channel_value, LV_ALIGN_BOTTOM_MID, 15, -48);

@@ -685,13 +685,13 @@ lv_obj_t *zmk_display_status_screen(void) {
     /* Shows scanner device's own battery level */
     LOG_INF("[INIT] Creating scanner battery...");
     scanner_bat_icon = lv_label_create(screen);
-    lv_obj_set_style_text_font(scanner_bat_icon, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(scanner_bat_icon, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_pos(scanner_bat_icon, 216, 4);  /* 4px right */
     lv_label_set_text(scanner_bat_icon, LV_SYMBOL_BATTERY_3);  /* Initial: 3/4 battery */
     lv_obj_set_style_text_color(scanner_bat_icon, lv_color_hex(0x7FFF00), 0);  /* Lime green */
 
     scanner_bat_pct = lv_label_create(screen);
-    lv_obj_set_style_text_font(scanner_bat_pct, &lv_font_unscii_8, 0);
+    lv_obj_set_style_text_font(scanner_bat_pct, &JetBrainsMono_Regular_10, 0);
     lv_obj_set_pos(scanner_bat_pct, 238, 7);  /* 2px up */
     lv_label_set_text(scanner_bat_pct, "?");  /* Unknown until battery read */
     lv_obj_set_style_text_color(scanner_bat_pct, lv_color_hex(0x7FFF00), 0);
@@ -734,7 +734,7 @@ lv_obj_t *zmk_display_status_screen(void) {
 
     /* Profile label kept but hidden (integrated into transport_label) */
     ble_profile_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(ble_profile_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(ble_profile_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(ble_profile_label, lv_color_white(), 0);
     lv_label_set_text(ble_profile_label, "");  /* Hidden - integrated */
     lv_obj_align(ble_profile_label, LV_ALIGN_TOP_RIGHT, -8, 78);
@@ -823,7 +823,7 @@ lv_obj_t *zmk_display_status_screen(void) {
 
         /* Percentage label (above bar, centered) */
         kb_bat_pct[i] = lv_label_create(screen);
-        lv_obj_set_style_text_font(kb_bat_pct[i], &lv_font_montserrat_12, 0);
+        lv_obj_set_style_text_font(kb_bat_pct[i], &JetBrainsMono_Regular_12, 0);
         lv_obj_set_style_text_color(kb_bat_pct[i], lv_color_white(), 0);
         lv_obj_align(kb_bat_pct[i], LV_ALIGN_BOTTOM_MID, x_offset, KB_PCT_Y_OFFSET);
         lv_label_set_text(kb_bat_pct[i], "0");
@@ -831,7 +831,7 @@ lv_obj_t *zmk_display_status_screen(void) {
 
         /* Name label (left of bar, same height as percentage) */
         kb_bat_name[i] = lv_label_create(screen);
-        lv_obj_set_style_text_font(kb_bat_name[i], &lv_font_montserrat_12, 0);
+        lv_obj_set_style_text_font(kb_bat_name[i], &JetBrainsMono_Regular_12, 0);
         lv_obj_set_style_text_color(kb_bat_name[i], lv_color_hex(0x808080), 0);
         lv_obj_align(kb_bat_name[i], LV_ALIGN_BOTTOM_MID, x_offset - bar_width/2 + KB_NAME_X_OFFSET, KB_PCT_Y_OFFSET);
         lv_obj_set_style_text_align(kb_bat_name[i], LV_TEXT_ALIGN_RIGHT, 0);
@@ -852,7 +852,7 @@ lv_obj_t *zmk_display_status_screen(void) {
 
         /* Disconnected state label (× symbol) */
         kb_bat_nc_label[i] = lv_label_create(screen);
-        lv_obj_set_style_text_font(kb_bat_nc_label[i], &lv_font_montserrat_12, 0);
+        lv_obj_set_style_text_font(kb_bat_nc_label[i], &JetBrainsMono_Regular_12, 0);
         lv_obj_set_style_text_color(kb_bat_nc_label[i], lv_color_hex(0xe63030), 0);
         lv_obj_align(kb_bat_nc_label[i], LV_ALIGN_BOTTOM_MID, x_offset, KB_PCT_Y_OFFSET);
         lv_label_set_text(kb_bat_nc_label[i], LV_SYMBOL_CLOSE);
@@ -1083,7 +1083,7 @@ static void destroy_layer_list_widgets(void) {
 /* Helper to create over-max label widget */
 static void create_over_max_widget(lv_obj_t *parent, int layer, int y_offset) {
     layer_over_max_label = lv_label_create(parent);
-    lv_obj_set_style_text_font(layer_over_max_label, &lv_font_montserrat_28, 0);
+    lv_obj_set_style_text_font(layer_over_max_label, &JetBrainsMono_Bold_28, 0);
     lv_obj_set_style_text_color(layer_over_max_label, get_layer_color(layer % 10), 0);
     lv_obj_set_style_text_align(layer_over_max_label, LV_TEXT_ALIGN_CENTER, 0);
     /* Enable transform for animations */
@@ -1197,11 +1197,11 @@ static void start_layer_list_slide_in(void) {
  */
 static const lv_font_t* get_slide_slot_font(int slot) {
     if (slot == 0 || slot == 8) {
-        return &lv_font_montserrat_16;  /* Edge - small */
+        return &JetBrainsMono_Regular_16;  /* Edge - small */
     } else if (slot == 1 || slot == 7) {
-        return &lv_font_montserrat_20;  /* Transition - medium */
+        return &JetBrainsMono_Regular_20;  /* Transition - medium */
     }
-    return &lv_font_montserrat_28;      /* Center - large (slots 2,3,4,5,6) */
+    return &JetBrainsMono_Bold_28;      /* Center - large (slots 2,3,4,5,6) */
 }
 
 /* Get opacity for slot based on gradient position (inactive):
@@ -1899,13 +1899,13 @@ static void create_main_screen_widgets(void) {
     lv_obj_align(device_name_label, LV_ALIGN_TOP_MID, 0, 25);
 
     scanner_bat_icon = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(scanner_bat_icon, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(scanner_bat_icon, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_pos(scanner_bat_icon, 216, 4);  /* 4px right */
     lv_label_set_text(scanner_bat_icon, LV_SYMBOL_BATTERY_3);  /* Initial: 3/4 battery */
     lv_obj_set_style_text_color(scanner_bat_icon, lv_color_hex(0x7FFF00), 0);
 
     scanner_bat_pct = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(scanner_bat_pct, &lv_font_unscii_8, 0);
+    lv_obj_set_style_text_font(scanner_bat_pct, &JetBrainsMono_Regular_10, 0);
     lv_obj_set_pos(scanner_bat_pct, 238, 7);  /* 2px up */
     lv_label_set_text(scanner_bat_pct, "?");  /* Unknown until battery read */
     lv_obj_set_style_text_color(scanner_bat_pct, lv_color_hex(0x7FFF00), 0);
@@ -1939,7 +1939,7 @@ static void create_main_screen_widgets(void) {
     lv_label_set_text(transport_label, "#ffffff BLE#\n#ffffff 0#");  /* Exclusive display */
 
     ble_profile_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ble_profile_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(ble_profile_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(ble_profile_label, lv_color_white(), 0);
     lv_label_set_text(ble_profile_label, "");  /* Hidden - integrated */
     lv_obj_align(ble_profile_label, LV_ALIGN_TOP_RIGHT, -8, 78);
@@ -1996,7 +1996,7 @@ static void create_main_screen_widgets(void) {
 
         /* Percentage label */
         kb_bat_pct[i] = lv_label_create(screen_obj);
-        lv_obj_set_style_text_font(kb_bat_pct[i], &lv_font_montserrat_12, 0);
+        lv_obj_set_style_text_font(kb_bat_pct[i], &JetBrainsMono_Regular_12, 0);
         lv_obj_set_style_text_color(kb_bat_pct[i], lv_color_white(), 0);
         lv_obj_align(kb_bat_pct[i], LV_ALIGN_BOTTOM_MID, x_offset_r, -42);
         lv_label_set_text(kb_bat_pct[i], "0");
@@ -2004,7 +2004,7 @@ static void create_main_screen_widgets(void) {
 
         /* Name label */
         kb_bat_name[i] = lv_label_create(screen_obj);
-        lv_obj_set_style_text_font(kb_bat_name[i], &lv_font_montserrat_12, 0);
+        lv_obj_set_style_text_font(kb_bat_name[i], &JetBrainsMono_Regular_12, 0);
         lv_obj_set_style_text_color(kb_bat_name[i], lv_color_hex(0x808080), 0);
         lv_obj_align(kb_bat_name[i], LV_ALIGN_BOTTOM_MID, x_offset_r - bar_width_r/2, -42);
         lv_obj_set_style_text_align(kb_bat_name[i], LV_TEXT_ALIGN_RIGHT, 0);
@@ -2024,7 +2024,7 @@ static void create_main_screen_widgets(void) {
 
         /* Disconnected state label */
         kb_bat_nc_label[i] = lv_label_create(screen_obj);
-        lv_obj_set_style_text_font(kb_bat_nc_label[i], &lv_font_montserrat_12, 0);
+        lv_obj_set_style_text_font(kb_bat_nc_label[i], &JetBrainsMono_Regular_12, 0);
         lv_obj_set_style_text_color(kb_bat_nc_label[i], lv_color_hex(0xe63030), 0);
         lv_obj_align(kb_bat_nc_label[i], LV_ALIGN_BOTTOM_MID, x_offset_r, -42);
         lv_label_set_text(kb_bat_nc_label[i], LV_SYMBOL_CLOSE);
@@ -2450,7 +2450,7 @@ static void create_display_settings_widgets(void) {
 
     /* Title */
     ds_title_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ds_title_label, &lv_font_montserrat_18, 0);
+    lv_obj_set_style_text_font(ds_title_label, &JetBrainsMono_Regular_18, 0);
     lv_obj_set_style_text_color(ds_title_label, lv_color_white(), 0);
     lv_label_set_text(ds_title_label, "Display Settings");
     lv_obj_align(ds_title_label, LV_ALIGN_TOP_MID, 0, y_pos);
@@ -2459,14 +2459,14 @@ static void create_display_settings_widgets(void) {
 
     /* ===== Brightness Section ===== */
     ds_brightness_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ds_brightness_label, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(ds_brightness_label, &JetBrainsMono_Regular_16, 0);
     lv_obj_set_style_text_color(ds_brightness_label, lv_color_white(), 0);
     lv_label_set_text(ds_brightness_label, "Brightness");
     lv_obj_set_pos(ds_brightness_label, 15, y_pos);
 
     /* Auto label */
     ds_auto_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ds_auto_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(ds_auto_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(ds_auto_label, lv_color_hex(0xAAAAAA), 0);
     lv_label_set_text(ds_auto_label, "Auto");
     lv_obj_set_pos(ds_auto_label, 195, y_pos + 4);
@@ -2538,7 +2538,7 @@ static void create_display_settings_widgets(void) {
 
     /* Brightness value label */
     ds_brightness_value = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ds_brightness_value, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(ds_brightness_value, &JetBrainsMono_Regular_16, 0);
     lv_obj_set_style_text_color(ds_brightness_value, lv_color_hex(0x007AFF), 0);
     char buf[8];
     snprintf(buf, sizeof(buf), "%d%%", ds_manual_brightness);
@@ -2549,7 +2549,7 @@ static void create_display_settings_widgets(void) {
 
     /* ===== Battery Section ===== */
     ds_battery_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ds_battery_label, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(ds_battery_label, &JetBrainsMono_Regular_16, 0);
     lv_obj_set_style_text_color(ds_battery_label, lv_color_white(), 0);
     lv_label_set_text(ds_battery_label, "Scanner Battery");
     lv_obj_set_pos(ds_battery_label, 15, y_pos);
@@ -2581,14 +2581,14 @@ static void create_display_settings_widgets(void) {
 
     /* ===== Max Layers Section ===== */
     ds_layer_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ds_layer_label, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(ds_layer_label, &JetBrainsMono_Regular_16, 0);
     lv_obj_set_style_text_color(ds_layer_label, lv_color_white(), 0);
     lv_label_set_text(ds_layer_label, "Max Layers");
     lv_obj_set_pos(ds_layer_label, 15, y_pos);
 
     /* Slide label and switch (same row as Max Layers, like Auto is on Brightness row) */
     ds_slide_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ds_slide_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(ds_slide_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(ds_slide_label, lv_color_hex(0xAAAAAA), 0);
     lv_label_set_text(ds_slide_label, "Slide");
     lv_obj_set_pos(ds_slide_label, 195, y_pos + 4);  /* Same x as Auto label */
@@ -2648,7 +2648,7 @@ static void create_display_settings_widgets(void) {
 
     /* Layer value label (aligned with Brightness value at x=230) */
     ds_layer_value = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ds_layer_value, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(ds_layer_value, &JetBrainsMono_Regular_16, 0);
     lv_obj_set_style_text_color(ds_layer_value, lv_color_hex(0x007AFF), 0);
     snprintf(buf, sizeof(buf), "%d", ds_max_layers);
     lv_label_set_text(ds_layer_value, buf);
@@ -2656,7 +2656,7 @@ static void create_display_settings_widgets(void) {
 
     /* Navigation hint */
     ds_nav_hint = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ds_nav_hint, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(ds_nav_hint, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(ds_nav_hint, lv_color_hex(0x808080), 0);
     lv_label_set_text(ds_nav_hint, LV_SYMBOL_UP " Main");
     lv_obj_align(ds_nav_hint, LV_ALIGN_BOTTOM_MID, 0, -10);
@@ -2683,14 +2683,14 @@ static void create_system_settings_widgets(void) {
 
     /* Title */
     ss_title_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ss_title_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(ss_title_label, &JetBrainsMono_Regular_20, 0);
     lv_obj_set_style_text_color(ss_title_label, lv_color_white(), 0);
     lv_label_set_text(ss_title_label, "Quick Actions");
     lv_obj_align(ss_title_label, LV_ALIGN_TOP_MID, 0, 20);
 
     /* Scanner version label */
     ss_version_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ss_version_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(ss_version_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(ss_version_label, lv_color_hex(0x808080), 0);
 #ifdef PROSPECTOR_GIT_VERSION
     lv_label_set_text(ss_version_label, "Scanner " PROSPECTOR_GIT_VERSION);
@@ -2701,7 +2701,7 @@ static void create_system_settings_widgets(void) {
 
     /* Keyboard version label - shows connected keyboard's firmware version */
     ss_kb_version_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ss_kb_version_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(ss_kb_version_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(ss_kb_version_label, lv_color_hex(0x606060), 0);
     {
         static char kb_ver_buf[64];
@@ -2743,7 +2743,7 @@ static void create_system_settings_widgets(void) {
 
     lv_obj_t *bl_label = lv_label_create(ss_bootloader_btn);
     lv_label_set_text(bl_label, "Enter Bootloader");
-    lv_obj_set_style_text_font(bl_label, &lv_font_montserrat_16, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(bl_label, &JetBrainsMono_Regular_16, LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(bl_label, lv_color_white(), LV_STATE_DEFAULT);
     lv_obj_center(bl_label);
 
@@ -2767,13 +2767,13 @@ static void create_system_settings_widgets(void) {
 
     lv_obj_t *rst_label = lv_label_create(ss_reset_btn);
     lv_label_set_text(rst_label, "System Reset");
-    lv_obj_set_style_text_font(rst_label, &lv_font_montserrat_16, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(rst_label, &JetBrainsMono_Regular_16, LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(rst_label, lv_color_white(), LV_STATE_DEFAULT);
     lv_obj_center(rst_label);
 
     /* Navigation hint */
     ss_nav_hint = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ss_nav_hint, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(ss_nav_hint, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(ss_nav_hint, lv_color_hex(0x808080), 0);
     lv_label_set_text(ss_nav_hint, LV_SYMBOL_LEFT " Main");
     lv_obj_align(ss_nav_hint, LV_ALIGN_BOTTOM_MID, 0, -10);
@@ -2890,7 +2890,7 @@ static void ks_create_entry(int entry_idx, int y_pos, int keyboard_index,
     snprintf(ch_buf, sizeof(ch_buf), "%d", channel);
     lv_label_set_text(ch_label, ch_buf);
     lv_obj_set_style_text_color(ch_label, lv_color_hex(0x000000), 0);  /* Dark text */
-    lv_obj_set_style_text_font(ch_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(ch_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_center(ch_label);
 
     /* Make badge clickable to filter by this channel */
@@ -2922,14 +2922,14 @@ static void ks_create_entry(int entry_idx, int y_pos, int keyboard_index,
     snprintf(rssi_buf, sizeof(rssi_buf), "%ddBm", rssi);
     lv_label_set_text(entry->rssi_label, rssi_buf);
     lv_obj_set_style_text_color(entry->rssi_label, lv_color_hex(0xA0A0A0), 0);
-    lv_obj_set_style_text_font(entry->rssi_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(entry->rssi_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_align(entry->rssi_label, LV_ALIGN_LEFT_MID, left_offset + 34, 0);
 
     /* Keyboard name */
     entry->name_label = lv_label_create(entry->container);
     lv_label_set_text(entry->name_label, name);
     lv_obj_set_style_text_color(entry->name_label, lv_color_white(), 0);
-    lv_obj_set_style_text_font(entry->name_label, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(entry->name_label, &JetBrainsMono_Regular_16, 0);
     lv_obj_align(entry->name_label, LV_ALIGN_LEFT_MID, left_offset + 92, 0);
 
     LOG_DBG("Created keyboard entry %d: %s (rssi=%d, ch=%d)", entry_idx, name, rssi, channel);
@@ -3047,7 +3047,7 @@ static void ks_show_channel_popup(void) {
     /* Title */
     lv_obj_t *title = lv_label_create(ks_channel_popup);
     lv_label_set_text(title, "Channel Select");
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(title, &JetBrainsMono_Regular_16, 0);
     lv_obj_set_style_text_color(title, lv_color_white(), 0);
     lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 5);
 
@@ -3088,7 +3088,7 @@ static void ks_show_channel_popup(void) {
     lv_obj_t *all_lbl = lv_label_create(ks_channel_popup_btns[CHANNEL_ALL]);
     lv_label_set_text(all_lbl, "All");
     lv_obj_set_style_text_color(all_lbl, lv_color_hex(0x000000), 0);
-    lv_obj_set_style_text_font(all_lbl, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(all_lbl, &JetBrainsMono_Regular_12, 0);
     lv_obj_center(all_lbl);
     lv_obj_add_event_cb(ks_channel_popup_btns[CHANNEL_ALL], ks_channel_popup_btn_cb,
                        LV_EVENT_CLICKED, (void *)(intptr_t)CHANNEL_ALL);
@@ -3110,7 +3110,7 @@ static void ks_show_channel_popup(void) {
     lv_obj_t *lbl0 = lv_label_create(ks_channel_popup_btns[0]);
     lv_label_set_text(lbl0, "0");
     lv_obj_set_style_text_color(lbl0, lv_color_hex(0x000000), 0);
-    lv_obj_set_style_text_font(lbl0, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(lbl0, &JetBrainsMono_Regular_12, 0);
     lv_obj_center(lbl0);
     lv_obj_add_event_cb(ks_channel_popup_btns[0], ks_channel_popup_btn_cb,
                        LV_EVENT_CLICKED, (void *)(intptr_t)0);
@@ -3143,7 +3143,7 @@ static void ks_show_channel_popup(void) {
         snprintf(buf, sizeof(buf), "%d", i);
         lv_label_set_text(lbl, buf);
         lv_obj_set_style_text_color(lbl, lv_color_hex(0x000000), 0);
-        lv_obj_set_style_text_font(lbl, &lv_font_montserrat_12, 0);
+        lv_obj_set_style_text_font(lbl, &JetBrainsMono_Regular_12, 0);
         lv_obj_center(lbl);
 
         lv_obj_add_event_cb(ks_channel_popup_btns[i], ks_channel_popup_btn_cb,
@@ -3333,7 +3333,7 @@ static void create_keyboard_select_widgets(void) {
 
     /* Title (left side) */
     ks_title_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ks_title_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(ks_title_label, &JetBrainsMono_Regular_20, 0);
     lv_obj_set_style_text_color(ks_title_label, lv_color_white(), 0);
     lv_label_set_text(ks_title_label, "Keyboards");
     lv_obj_align(ks_title_label, LV_ALIGN_TOP_LEFT, 15, 15);
@@ -3343,7 +3343,7 @@ static void create_keyboard_select_widgets(void) {
 
     /* "Ch:" prefix label - clickable */
     lv_obj_t *ch_prefix = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ch_prefix, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(ch_prefix, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(ch_prefix, lv_color_hex(0x808080), 0);
     lv_label_set_text(ch_prefix, "Ch:");
     lv_obj_align(ch_prefix, LV_ALIGN_TOP_RIGHT, -55, 19);
@@ -3362,7 +3362,7 @@ static void create_keyboard_select_widgets(void) {
 
     /* Channel value label (centered in badge) - also clickable, triggers same callback */
     ks_channel_value = lv_label_create(ks_channel_container);
-    lv_obj_set_style_text_font(ks_channel_value, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(ks_channel_value, &JetBrainsMono_Regular_12, 0);
     lv_obj_center(ks_channel_value);
     lv_obj_add_flag(ks_channel_value, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(ks_channel_value, ks_channel_display_cb, LV_EVENT_CLICKED, NULL);
@@ -3370,7 +3370,7 @@ static void create_keyboard_select_widgets(void) {
 
     /* Navigation hint */
     ks_nav_hint = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(ks_nav_hint, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(ks_nav_hint, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(ks_nav_hint, lv_color_hex(0x808080), 0);
     lv_label_set_text(ks_nav_hint, LV_SYMBOL_DOWN " Main");
     lv_obj_align(ks_nav_hint, LV_ALIGN_BOTTOM_MID, 0, -10);

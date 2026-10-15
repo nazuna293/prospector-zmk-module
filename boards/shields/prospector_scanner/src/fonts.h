@@ -15,6 +15,8 @@ extern const lv_font_t NerdFonts_Regular_40;
 extern const lv_font_t JetBrainsMono_Regular_10;
 extern const lv_font_t JetBrainsMono_Regular_12;
 extern const lv_font_t JetBrainsMono_Regular_16;
+extern const lv_font_t JetBrainsMono_Regular_18;
+extern const lv_font_t JetBrainsMono_Regular_20;
 extern const lv_font_t JetBrainsMono_Bold_16;
 extern const lv_font_t JetBrainsMono_Bold_28;
 
