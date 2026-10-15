@@ -675,7 +675,7 @@ lv_obj_t *zmk_display_status_screen(void) {
     /* ===== 1. Device Name (TOP_MID, y=25) ===== */
     LOG_INF("[INIT] Creating device name...");
     device_name_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(device_name_label, &lv_font_unscii_16, 0);
+    lv_obj_set_style_text_font(device_name_label, &JetBrainsMono_Bold_16, 0);
     lv_obj_set_style_text_color(device_name_label, lv_color_white(), 0);
     lv_label_set_text(device_name_label, "Scanning...");
     lv_obj_align(device_name_label, LV_ALIGN_TOP_MID, 0, 25);
@@ -706,13 +706,13 @@ lv_obj_t *zmk_display_status_screen(void) {
     /* ===== 3. WPM Widget (TOP_LEFT, centered under title) ===== */
     LOG_INF("[INIT] Creating WPM...");
     wpm_title_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(wpm_title_label, &lv_font_unscii_8, 0);
+    lv_obj_set_style_text_font(wpm_title_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(wpm_title_label, lv_color_make(0xA0, 0xA0, 0xA0), 0);
     lv_label_set_text(wpm_title_label, "WPM");
     lv_obj_set_pos(wpm_title_label, 20, 53);  /* 3px down */
 
     wpm_value_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(wpm_value_label, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(wpm_value_label, &JetBrainsMono_Bold_16, 0);
     lv_obj_set_style_text_color(wpm_value_label, lv_color_white(), 0);
     lv_obj_set_width(wpm_value_label, 48);  /* Fixed width for centering */
     lv_obj_set_style_text_align(wpm_value_label, LV_TEXT_ALIGN_CENTER, 0);
@@ -723,7 +723,7 @@ lv_obj_t *zmk_display_status_screen(void) {
     /* ===== 4. Connection Status (TOP_RIGHT) ===== */
     LOG_INF("[INIT] Creating connection status...");
     transport_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(transport_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(transport_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(transport_label, lv_color_white(), 0);
     lv_obj_set_style_text_align(transport_label, LV_TEXT_ALIGN_RIGHT, 0);
     lv_label_set_recolor(transport_label, true);
@@ -743,7 +743,7 @@ lv_obj_t *zmk_display_status_screen(void) {
     /* ===== 5. Layer Widget (CENTER area, y=85-120) ===== */
     LOG_INF("[INIT] Creating layer widget...");
     layer_title_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(layer_title_label, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(layer_title_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(layer_title_label, lv_color_make(160, 160, 160), 0);
     lv_obj_set_style_text_opa(layer_title_label, LV_OPA_70, 0);
     lv_label_set_text(layer_title_label, "Layer");
@@ -865,13 +865,13 @@ lv_obj_t *zmk_display_status_screen(void) {
     LOG_INF("[INIT] Creating signal status...");
 
     channel_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(channel_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(channel_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(channel_label, lv_color_make(0x80, 0x80, 0x80), 0);
     lv_label_set_text(channel_label, "Ch:0");
     lv_obj_set_pos(channel_label, 62, 219);  /* 5px down, 5px left */
 
     rx_title_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(rx_title_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(rx_title_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(rx_title_label, lv_color_make(0x80, 0x80, 0x80), 0);
     lv_label_set_text(rx_title_label, "RX:");
     lv_obj_set_pos(rx_title_label, 102, 219);  /* 5px down, 5px left */
@@ -889,13 +889,13 @@ lv_obj_t *zmk_display_status_screen(void) {
     lv_obj_set_style_radius(rssi_bar, 2, LV_PART_INDICATOR);
 
     rssi_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(rssi_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(rssi_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(rssi_label, lv_color_make(0xA0, 0xA0, 0xA0), 0);
     lv_label_set_text(rssi_label, "0dBm");
     lv_obj_set_pos(rssi_label, 167, 219);  /* 5px down, 5px left */
 
     rate_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(rate_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(rate_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(rate_label, lv_color_make(0xA0, 0xA0, 0xA0), 0);
     lv_label_set_text(rate_label, "0.0Hz");
     lv_obj_set_pos(rate_label, 222, 219);  /* 5px down, 5px left */
@@ -1048,7 +1048,7 @@ static void create_layer_list_widgets(lv_obj_t *parent, int y_offset) {
 
     for (int i = 0; i < num_layers && i < 10; i++) {
         layer_labels[i] = lv_label_create(parent);
-        lv_obj_set_style_text_font(layer_labels[i], &lv_font_montserrat_28, 0);
+        lv_obj_set_style_text_font(layer_labels[i], &JetBrainsMono_Bold_28, 0);
         lv_obj_set_width(layer_labels[i], label_width);
         lv_obj_set_style_text_align(layer_labels[i], LV_TEXT_ALIGN_CENTER, 0);
         /* Enable transform for pulse animation */
@@ -1893,7 +1893,7 @@ static void create_main_screen_widgets(void) {
 
     /* Recreate all main screen widgets using screen_obj */
     device_name_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(device_name_label, &lv_font_unscii_16, 0);
+    lv_obj_set_style_text_font(device_name_label, &JetBrainsMono_Bold_16, 0);
     lv_obj_set_style_text_color(device_name_label, lv_color_white(), 0);
     lv_label_set_text(device_name_label, "Scanning...");
     lv_obj_align(device_name_label, LV_ALIGN_TOP_MID, 0, 25);
@@ -1917,13 +1917,13 @@ static void create_main_screen_widgets(void) {
     }
 
     wpm_title_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(wpm_title_label, &lv_font_unscii_8, 0);
+    lv_obj_set_style_text_font(wpm_title_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(wpm_title_label, lv_color_make(0xA0, 0xA0, 0xA0), 0);
     lv_label_set_text(wpm_title_label, "WPM");
     lv_obj_set_pos(wpm_title_label, 20, 53);  /* 3px down */
 
     wpm_value_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(wpm_value_label, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(wpm_value_label, &JetBrainsMono_Bold_16, 0);
     lv_obj_set_style_text_color(wpm_value_label, lv_color_white(), 0);
     lv_obj_set_width(wpm_value_label, 48);  /* Fixed width for centering */
     lv_obj_set_style_text_align(wpm_value_label, LV_TEXT_ALIGN_CENTER, 0);
@@ -1931,7 +1931,7 @@ static void create_main_screen_widgets(void) {
     lv_obj_set_pos(wpm_value_label, 8, 66);  /* 3px down */
 
     transport_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(transport_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(transport_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(transport_label, lv_color_white(), 0);
     lv_obj_set_style_text_align(transport_label, LV_TEXT_ALIGN_RIGHT, 0);
     lv_label_set_recolor(transport_label, true);
@@ -1945,7 +1945,7 @@ static void create_main_screen_widgets(void) {
     lv_obj_align(ble_profile_label, LV_ALIGN_TOP_RIGHT, -8, 78);
 
     layer_title_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(layer_title_label, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(layer_title_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(layer_title_label, lv_color_make(160, 160, 160), 0);
     lv_label_set_text(layer_title_label, "Layer");
     lv_obj_align(layer_title_label, LV_ALIGN_TOP_MID, 0, 82);  /* 3px up */
@@ -2032,13 +2032,13 @@ static void create_main_screen_widgets(void) {
     }
 
     channel_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(channel_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(channel_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(channel_label, lv_color_make(0x80, 0x80, 0x80), 0);
     lv_label_set_text(channel_label, "Ch:0");
     lv_obj_set_pos(channel_label, 62, 219);  /* 5px down, 5px left */
 
     rx_title_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(rx_title_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(rx_title_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(rx_title_label, lv_color_make(0x80, 0x80, 0x80), 0);
     lv_label_set_text(rx_title_label, "RX:");
     lv_obj_set_pos(rx_title_label, 102, 219);  /* 5px down, 5px left */
@@ -2056,13 +2056,13 @@ static void create_main_screen_widgets(void) {
     lv_obj_set_style_radius(rssi_bar, 2, LV_PART_INDICATOR);
 
     rssi_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(rssi_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(rssi_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(rssi_label, lv_color_make(0xA0, 0xA0, 0xA0), 0);
     lv_label_set_text(rssi_label, "--dBm");
     lv_obj_set_pos(rssi_label, 167, 219);  /* 5px down, 5px left */
 
     rate_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(rate_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(rate_label, &JetBrainsMono_Regular_12, 0);
     lv_obj_set_style_text_color(rate_label, lv_color_make(0xA0, 0xA0, 0xA0), 0);
     lv_label_set_text(rate_label, "-.--Hz");
     lv_obj_set_pos(rate_label, 222, 219);  /* 5px down, 5px left */

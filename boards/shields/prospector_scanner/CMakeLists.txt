@@ -34,6 +34,11 @@ if(CONFIG_SHIELD_PROSPECTOR_SCANNER)
     # NerdFont for modifier icons
     target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/fonts/NerdFonts_Regular_40.c)
 
+    # JetBrains Mono (SIL OFL 1.1) - font test
+    target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/fonts/JetBrainsMono_Regular_12.c)
+    target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/fonts/JetBrainsMono_Bold_16.c)
+    target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/fonts/JetBrainsMono_Bold_28.c)
+
     # Prospector Display layouts (Carrefinho-inspired)
     target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/prospector_layouts.c)
     target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/field_layout.c)
