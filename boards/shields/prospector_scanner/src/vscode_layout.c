@@ -90,11 +90,13 @@ static struct {
     int8_t rssi;
     int32_t rate_x100;
     bool has_signal;
+    int sbat;              /* scanner's own battery %, -1 = unknown */
 } st;
 
 static lv_obj_t *s_parent;
 static lv_obj_t *s_root;
 static lv_obj_t *s_name;
+static lv_obj_t *s_sbat_lbl;
 static lv_obj_t *s_wpm_t, *s_wpm_v;
 static lv_obj_t *s_conn_chip, *s_conn_lbl;
 static lv_obj_t *s_layer_t, *s_layer_name;
@@ -104,6 +106,7 @@ static lv_obj_t *s_bat_lbl, *s_bat_track, *s_bat_fill;
 static lv_obj_t *s_wait_cover, *s_wait_name, *s_wait_l1, *s_wait_l2;
 static lv_obj_t *s_band, *s_ch_lbl, *s_rx_lbl, *s_sig[5], *s_dbm_lbl, *s_hz_lbl;
 static uint8_t s_ntabs;
+static int s_sbat_cache = -1;   /* survives layout switches (the pending update is event driven) */
 
 /* ========== Helpers ========== */
 
@@ -291,6 +294,24 @@ static void upd_signal(void) {
     lv_label_set_text(s_hz_lbl, buf);
 }
 
+/* Scanner's own battery: small text at the top right (YADS: (216,4)). Shown only
+ * when the battery widget is enabled in the display settings. */
+static void upd_scanner_battery(void) {
+    if (!s_sbat_lbl) return;
+    const vs_palette_t *p = &PAL[cur_pal];
+    if (st.sbat < 0 || !display_settings_get_battery_visible()) {
+        vs_show(s_sbat_lbl, false);
+        return;
+    }
+    char buf[8];
+    snprintf(buf, sizeof(buf), "%d%%", st.sbat);
+    lv_label_set_text(s_sbat_lbl, buf);
+    lv_obj_set_style_text_color(s_sbat_lbl,
+                                lv_color_hex(st.sbat < 20 ? p->err : (st.sbat < 40 ? p->warn : p->desc)),
+                                LV_PART_MAIN);
+    vs_show(s_sbat_lbl, true);
+}
+
 static void upd_waiting(void) {
     vs_show(s_wait_cover, !st.valid);
 }
@@ -304,6 +325,7 @@ static void refresh_all(void) {
     upd_battery();
     upd_channel();
     upd_signal();
+    upd_scanner_battery();
     upd_waiting();
 }
 
@@ -311,6 +333,7 @@ static void refresh_all(void) {
 
 static void clear_pointers(void) {
     s_root = NULL;
+    s_sbat_lbl = NULL;
     s_name = s_wpm_t = s_wpm_v = s_conn_chip = s_conn_lbl = s_layer_t = s_layer_name = NULL;
     for (int i = 0; i < VS_MAX_TABS; i++) {
         s_tab[i] = s_tab_lbl[i] = s_tab_line[i] = NULL;
@@ -346,6 +369,10 @@ static void build(lv_obj_t *parent) {
 
     /* Keyboard name: top centre (YADS: y=25) */
     s_name = vs_label(s_root, &JetBrainsMono_Bold_16, p->fg, "Scanning...", 40, 22, 200, LV_TEXT_ALIGN_CENTER);
+
+    /* Scanner's own battery: top right */
+    s_sbat_lbl = vs_label(s_root, &JetBrainsMono_Regular_10, p->desc, "", VS_W - 66, 6, 56, LV_TEXT_ALIGN_RIGHT);
+    vs_show(s_sbat_lbl, false);
 
     /* WPM: left corner (YADS: x=8..56, y=53). Value = numeric literal colour. */
     s_wpm_t = vs_label(s_root, &JetBrainsMono_Regular_10, p->desc, "wpm", 14, 54, 50, LV_TEXT_ALIGN_LEFT);
@@ -422,6 +449,7 @@ lv_obj_t *vscode_layout_create(lv_obj_t *parent) {
         return s_root;
     }
     memset(&st, 0, sizeof(st));
+    st.sbat = s_sbat_cache;
     s_parent = parent;
     build(parent);
     refresh_all();
@@ -518,4 +546,11 @@ void vscode_layout_set_waiting(void) {
     st.has_signal = false;
     upd_signal();
     upd_waiting();
+}
+
+void vscode_layout_update_scanner_battery(int level) {
+    s_sbat_cache = level;
+    st.sbat = level;
+    if (s_root == NULL) return;
+    upd_scanner_battery();
 }

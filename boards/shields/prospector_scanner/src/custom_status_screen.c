@@ -663,6 +663,10 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
     int scanner_bat;
     if (scanner_get_pending_battery(&scanner_bat)) {
         display_update_scanner_battery(scanner_bat);
+        if (current_screen == SCREEN_PROSPECTOR_DISPLAY &&
+            prospector_layouts_get_style() == PROSPECTOR_LAYOUT_VSCODE) {
+            vscode_layout_update_scanner_battery(scanner_bat);
+        }
     }
 }
 
