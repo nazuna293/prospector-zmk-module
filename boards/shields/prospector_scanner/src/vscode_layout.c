@@ -154,6 +154,29 @@ static uint8_t vs_rssi_bars(int8_t r) {
     return 0;
 }
 
+/* Layer name for the label under the tabs: the scanner-side table
+ * (CONFIG_PROSPECTOR_LAYER_NAMES, comma separated) wins; otherwise the 4-char
+ * name that arrived in the advertisement. */
+static const char *layer_label(int idx, const char *fallback, char *buf, size_t n) {
+    const char *s = CONFIG_PROSPECTOR_LAYER_NAMES;
+    int cur = 0;
+    while (*s) {
+        const char *e = strchr(s, ',');
+        size_t len = e ? (size_t)(e - s) : strlen(s);
+        if (cur == idx) {
+            if (len == 0) break;
+            if (len >= n) len = n - 1;
+            memcpy(buf, s, len);
+            buf[len] = '\0';
+            return buf;
+        }
+        cur++;
+        if (!e) break;
+        s = e + 1;
+    }
+    return fallback;
+}
+
 /* ========== Dynamic updates (each is idempotent) ========== */
 
 static void upd_name(void) {
@@ -202,7 +225,8 @@ static void upd_layer(void) {
         lv_obj_set_y(s_tab_lbl[i], act ? 5 : 8);
     }
     if (s_layer_name) {
-        lv_label_set_text(s_layer_name, st.lname);
+        char nb[20];
+        lv_label_set_text(s_layer_name, layer_label(st.layer, st.lname, nb, sizeof(nb)));
     }
 }
 
@@ -400,7 +424,7 @@ static void build(lv_obj_t *parent) {
             vs_show(s_tab_line[i], false);
         }
     }
-    s_layer_name = vs_label(s_root, &JetBrainsMono_Regular_12, p->desc, "", 90, 129, 100, LV_TEXT_ALIGN_CENTER);
+    s_layer_name = vs_label(s_root, &JetBrainsMono_Regular_12, p->desc, "", 40, 129, 200, LV_TEXT_ALIGN_CENTER);
 
     /* Modifiers: keybinding labels (YADS: y=145). Created hidden. */
     for (int i = 0; i < 4; i++) {

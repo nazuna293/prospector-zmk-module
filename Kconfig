@@ -267,6 +267,16 @@ config PROSPECTOR_DEFAULT_LAYOUT
       3 = Radii (circular wheel indicator)
       4 = VSCode (VS Code style tabs / status bar, YADS information layout)
 
+config PROSPECTOR_LAYER_NAMES
+    string "Layer names for the VSCode layout (comma separated)"
+    default ""
+    depends on PROSPECTOR_MODE_SCANNER
+    help
+      Full layer names, in layer order, e.g. "Default,Tenkey,Symbol,Macro".
+      The keyboard advertisement carries only 4 characters, so the VSCode layout
+      looks the name up here by layer index. Layers without an entry fall back
+      to the 4-character name from the keyboard. Changing this needs a rebuild.
+
 config PROSPECTOR_MULTI_KEYBOARD
     bool "Support multiple keyboards"
     default y
