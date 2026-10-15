@@ -40,7 +40,9 @@ if(CONFIG_SHIELD_PROSPECTOR_SCANNER)
     target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/fonts/JetBrainsMono_Regular_16.c)
     target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/fonts/JetBrainsMono_Regular_18.c)
     target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/fonts/JetBrainsMono_Regular_20.c)
+    target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/fonts/JetBrainsMono_Bold_12.c)
     target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/fonts/JetBrainsMono_Bold_16.c)
+    target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/fonts/JetBrainsMono_Bold_20.c)
     target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/fonts/JetBrainsMono_Bold_28.c)
 
     # Prospector Display layouts (Carrefinho-inspired)
@@ -48,6 +50,7 @@ if(CONFIG_SHIELD_PROSPECTOR_SCANNER)
     target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/field_layout.c)
     target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/operator_layout.c)
     target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/radii_layout.c)
+    target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE src/vscode_layout.c)
 
     # Carrefinho custom fonts
     target_sources_ifdef(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM app PRIVATE

@@ -32,6 +32,7 @@
 #endif
 #include "events/swipe_gesture_event.h"
 #include "fonts.h"  /* NerdFont declarations */
+#include "vscode_layout.h"
 #include "touch_handler.h"  /* For LVGL input device registration */
 #include "brightness_control.h"  /* For auto brightness sensor control */
 #include "display_settings.h"   /* NVS persistence for display settings */
@@ -549,6 +550,12 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
             last_keyboard_name[0] = '\0';
             active_battery_count = -1;
 
+            /* VSCode layout (Prospector Display screen) shows its own waiting state */
+            if (current_screen == SCREEN_PROSPECTOR_DISPLAY &&
+                prospector_layouts_get_style() == PROSPECTOR_LAYOUT_VSCODE) {
+                vscode_layout_set_waiting();
+            }
+
             /* Apply timeout brightness if configured */
 #ifdef CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS
             if (CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS > 0) {
@@ -623,6 +630,12 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
         /* Update signal display INLINE (no function call with float param) */
         rssi = sig_rssi;
         rate_hz = (float)sig_rate_x100 / 100.0f;
+
+        /* VSCode layout (Prospector Display screen) has its own signal strip */
+        if (current_screen == SCREEN_PROSPECTOR_DISPLAY &&
+            prospector_layouts_get_style() == PROSPECTOR_LAYOUT_VSCODE) {
+            vscode_layout_update_signal(sig_rssi, sig_rate_x100);
+        }
 
         uint8_t bars = rssi_to_bars(sig_rssi);
         if (rssi_bar) {

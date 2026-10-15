@@ -33,6 +33,7 @@ typedef enum {
     PROSPECTOR_LAYOUT_FIELD,         /* Clean modern layout */
     PROSPECTOR_LAYOUT_OPERATOR,      /* Minimalist dot indicators */
     PROSPECTOR_LAYOUT_RADII,         /* Circular wheel indicator */
+    PROSPECTOR_LAYOUT_VSCODE,        /* VS Code style (tabs / status bar), YADS information layout */
     PROSPECTOR_LAYOUT_COUNT
 } prospector_layout_t;
 

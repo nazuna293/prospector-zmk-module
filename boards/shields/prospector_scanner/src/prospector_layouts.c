@@ -12,6 +12,7 @@
 #include "operator_layout.h"
 #include "radii_layout.h"
 #include "field_layout.h"
+#include "vscode_layout.h"
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(prospector_layouts, CONFIG_ZMK_LOG_LEVEL);
@@ -62,7 +63,8 @@ void prospector_layouts_set_style(prospector_layout_t layout) {
     /* Support Field, Operator, and Radii */
     if (layout != PROSPECTOR_LAYOUT_FIELD &&
         layout != PROSPECTOR_LAYOUT_OPERATOR &&
-        layout != PROSPECTOR_LAYOUT_RADII) {
+        layout != PROSPECTOR_LAYOUT_RADII &&
+        layout != PROSPECTOR_LAYOUT_VSCODE) {
         layout = PROSPECTOR_LAYOUT_OPERATOR;
     }
 
@@ -96,6 +98,9 @@ void prospector_layouts_next(void) {
         next = PROSPECTOR_LAYOUT_RADII;
         break;
     case PROSPECTOR_LAYOUT_RADII:
+        next = PROSPECTOR_LAYOUT_VSCODE;
+        break;
+    case PROSPECTOR_LAYOUT_VSCODE:
     default:
         next = PROSPECTOR_LAYOUT_FIELD;
         break;
@@ -110,14 +115,17 @@ void prospector_layouts_prev(void) {
     prospector_layout_t prev;
     switch (current_layout) {
     case PROSPECTOR_LAYOUT_FIELD:
-        prev = PROSPECTOR_LAYOUT_RADII;
+        prev = PROSPECTOR_LAYOUT_VSCODE;
         break;
     case PROSPECTOR_LAYOUT_OPERATOR:
         prev = PROSPECTOR_LAYOUT_FIELD;
         break;
     case PROSPECTOR_LAYOUT_RADII:
-    default:
         prev = PROSPECTOR_LAYOUT_OPERATOR;
+        break;
+    case PROSPECTOR_LAYOUT_VSCODE:
+    default:
+        prev = PROSPECTOR_LAYOUT_RADII;
         break;
     }
     prospector_layouts_set_style(prev);
@@ -147,6 +155,9 @@ void prospector_layouts_cycle_palette(void) {
     case PROSPECTOR_LAYOUT_RADII:
         radii_layout_cycle_palette();
         break;
+    case PROSPECTOR_LAYOUT_VSCODE:
+        vscode_layout_cycle_palette();
+        break;
     default:
         break;
     }
@@ -162,6 +173,8 @@ const char *prospector_layouts_get_name(prospector_layout_t layout) {
         return "Operator";
     case PROSPECTOR_LAYOUT_RADII:
         return "Radii";
+    case PROSPECTOR_LAYOUT_VSCODE:
+        return "VSCode";
     default:
         return "Unknown";
     }
@@ -180,6 +193,9 @@ static void destroy_current_layout(void) {
     case PROSPECTOR_LAYOUT_RADII:
         radii_layout_destroy();
         break;
+    case PROSPECTOR_LAYOUT_VSCODE:
+        vscode_layout_destroy();
+        break;
     default:
         break;
     }
@@ -197,6 +213,9 @@ static void create_current_layout(void) {
         break;
     case PROSPECTOR_LAYOUT_RADII:
         radii_layout_create(parent_obj);
+        break;
+    case PROSPECTOR_LAYOUT_VSCODE:
+        vscode_layout_create(parent_obj);
         break;
     default:
         /* Fallback to Operator */
@@ -259,6 +278,9 @@ static void update_current_layout(void) {
             peripheral_battery[0], peripheral_connected[0],
             modifier_flags, usb_connected, ble_profile
         );
+        break;
+    case PROSPECTOR_LAYOUT_VSCODE:
+        vscode_layout_update(&cached_data);
         break;
     default:
         break;
