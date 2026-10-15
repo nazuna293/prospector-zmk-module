@@ -706,7 +706,7 @@ lv_obj_t *zmk_display_status_screen(void) {
     /* ===== 3. WPM Widget (TOP_LEFT, centered under title) ===== */
     LOG_INF("[INIT] Creating WPM...");
     wpm_title_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(wpm_title_label, &JetBrainsMono_Regular_12, 0);
+    lv_obj_set_style_text_font(wpm_title_label, &JetBrainsMono_Regular_10, 0);
     lv_obj_set_style_text_color(wpm_title_label, lv_color_make(0xA0, 0xA0, 0xA0), 0);
     lv_label_set_text(wpm_title_label, "WPM");
     lv_obj_set_pos(wpm_title_label, 20, 53);  /* 3px down */
@@ -743,7 +743,7 @@ lv_obj_t *zmk_display_status_screen(void) {
     /* ===== 5. Layer Widget (CENTER area, y=85-120) ===== */
     LOG_INF("[INIT] Creating layer widget...");
     layer_title_label = lv_label_create(screen);
-    lv_obj_set_style_text_font(layer_title_label, &JetBrainsMono_Regular_12, 0);
+    lv_obj_set_style_text_font(layer_title_label, &JetBrainsMono_Regular_16, 0);
     lv_obj_set_style_text_color(layer_title_label, lv_color_make(160, 160, 160), 0);
     lv_obj_set_style_text_opa(layer_title_label, LV_OPA_70, 0);
     lv_label_set_text(layer_title_label, "Layer");
@@ -1917,7 +1917,7 @@ static void create_main_screen_widgets(void) {
     }
 
     wpm_title_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(wpm_title_label, &JetBrainsMono_Regular_12, 0);
+    lv_obj_set_style_text_font(wpm_title_label, &JetBrainsMono_Regular_10, 0);
     lv_obj_set_style_text_color(wpm_title_label, lv_color_make(0xA0, 0xA0, 0xA0), 0);
     lv_label_set_text(wpm_title_label, "WPM");
     lv_obj_set_pos(wpm_title_label, 20, 53);  /* 3px down */
@@ -1945,7 +1945,7 @@ static void create_main_screen_widgets(void) {
     lv_obj_align(ble_profile_label, LV_ALIGN_TOP_RIGHT, -8, 78);
 
     layer_title_label = lv_label_create(screen_obj);
-    lv_obj_set_style_text_font(layer_title_label, &JetBrainsMono_Regular_12, 0);
+    lv_obj_set_style_text_font(layer_title_label, &JetBrainsMono_Regular_16, 0);
     lv_obj_set_style_text_color(layer_title_label, lv_color_make(160, 160, 160), 0);
     lv_label_set_text(layer_title_label, "Layer");
     lv_obj_align(layer_title_label, LV_ALIGN_TOP_MID, 0, 82);  /* 3px up */
