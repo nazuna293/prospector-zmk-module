@@ -25,14 +25,13 @@ LOG_MODULE_REGISTER(vscode_layout, CONFIG_ZMK_LOG_LEVEL);
 #define VS_MAX_TABS 8
 #define VS_BAR_W    165
 
-/* Typing activity wave: between the WPM block and the connection chip */
-#define VS_WAVE_N    30     /* bars */
-#define VS_WAVE_X    90     /* left edge (centred between the WPM block and the chip) */
-#define VS_WAVE_W    2      /* bar width */
-#define VS_WAVE_PITCH 3     /* bar width + 1px gap */
-#define VS_WAVE_BASE 76     /* baseline y (the "Layer" heading starts at y=80) */
-#define VS_WAVE_STEP 4      /* px per level (max height 2+6*4=26, top at y=50, below the name) */
-#define VS_WAVE_MAX  6      /* levels */
+/* Typing equalizer: between the WPM block and the connection chip */
+#define VS_EQ_N      16     /* bands */
+#define VS_EQ_X      72     /* left edge */
+#define VS_EQ_W      6      /* bar width */
+#define VS_EQ_PITCH  8      /* bar width + 2px gap -> right edge x=198, left of the chip */
+#define VS_EQ_BASE   76     /* baseline y (the "Layer" heading starts at y=80) */
+#define VS_EQ_MAXH   28     /* tallest bar: top at y=48, below the keyboard name */
 
 /* ========== Palettes ========== */
 
@@ -115,11 +114,15 @@ static lv_obj_t *s_bat_lbl, *s_bat_track, *s_bat_fill;
 static lv_obj_t *s_wait_cover, *s_wait_name, *s_wait_l1, *s_wait_l2;
 static lv_obj_t *s_band, *s_ch_lbl, *s_rx_lbl, *s_sig[5], *s_dbm_lbl, *s_hz_lbl;
 static uint8_t s_ntabs;
-static lv_obj_t *s_wave[VS_WAVE_N];
+static lv_obj_t *s_eq[VS_EQ_N];     /* bars */
+static lv_obj_t *s_cap[VS_EQ_N];    /* peak-hold caps */
 static lv_timer_t *s_wave_timer;
-static uint8_t s_hist[VS_WAVE_N];   /* oldest first */
+static uint8_t s_lvl[VS_EQ_N];      /* bar height (px) */
+static uint8_t s_peak[VS_EQ_N];     /* peak cap height (px) */
+static uint8_t s_hold[VS_EQ_N];     /* ticks the cap stays before it falls */
 static uint16_t s_wave_acc;         /* key presses since the last tick */
 static bool s_wave_dirty;           /* bars need a redraw */
+static uint32_t s_rng = 2463534242u;
 
 /* ========== Helpers ========== */
 
@@ -353,38 +356,73 @@ static void upd_waiting(void) {
     vs_show(s_wait_cover, !st.valid);
 }
 
-/* Typing activity wave: one sample per 100 ms tick. A sample is the number of key
- * presses seen since the last tick (x2, capped), or the previous sample minus one,
- * whichever is larger, so a keystroke leaves a short decaying bump. */
-static void draw_wave(void) {
+/* Typing equalizer. Every key press kicks one pseudo-random band (and its neighbours); the
+ * band is NOT derived from the key, so nothing about what was typed leaves the keyboard.
+ * Bars fall back smoothly and a peak cap lingers for a moment, like a spectrum analyzer. */
+static uint32_t eq_rand(void) {
+    s_rng ^= k_uptime_get_32();
+    s_rng ^= s_rng << 13;
+    s_rng ^= s_rng >> 17;
+    s_rng ^= s_rng << 5;
+    return s_rng;
+}
+
+static void draw_eq(void) {
     const vs_palette_t *p = &PAL[cur_pal];
-    for (int i = 0; i < VS_WAVE_N; i++) {
-        if (!s_wave[i]) continue;
-        int h = 2 + s_hist[i] * VS_WAVE_STEP;
-        lv_obj_set_size(s_wave[i], VS_WAVE_W, h);
-        lv_obj_set_pos(s_wave[i], VS_WAVE_X + i * VS_WAVE_PITCH, VS_WAVE_BASE - h);
-        lv_obj_set_style_bg_color(s_wave[i], lv_color_hex(s_hist[i] ? p->accent : p->disabled), LV_PART_MAIN);
+    for (int i = 0; i < VS_EQ_N; i++) {
+        if (!s_eq[i]) continue;
+        int h = (s_lvl[i] < 2) ? 2 : s_lvl[i];
+        lv_obj_set_size(s_eq[i], VS_EQ_W, h);
+        lv_obj_set_pos(s_eq[i], VS_EQ_X + i * VS_EQ_PITCH, VS_EQ_BASE - h);
+        lv_obj_set_style_bg_color(s_eq[i], lv_color_hex(s_lvl[i] > 2 ? p->accent : p->disabled), LV_PART_MAIN);
+        if (s_cap[i]) {
+            bool show = (int)s_peak[i] > (int)s_lvl[i] + 2;
+            vs_show(s_cap[i], show);
+            if (show) {
+                lv_obj_set_pos(s_cap[i], VS_EQ_X + i * VS_EQ_PITCH, VS_EQ_BASE - s_peak[i] - 3);
+            }
+        }
     }
 }
 
 static void wave_tick(lv_timer_t *t) {
     ARG_UNUSED(t);
-    int lv = (int)s_wave_acc * 2;
-    s_wave_acc = 0;
-    int decay = (int)s_hist[VS_WAVE_N - 1] - 1;
-    if (lv < decay) lv = decay;
-    if (lv > VS_WAVE_MAX) lv = VS_WAVE_MAX;
-    if (lv < 0) lv = 0;
 
-    bool any = (lv > 0);
-    for (int i = 0; i < VS_WAVE_N - 1; i++) {
-        s_hist[i] = s_hist[i + 1];
-        if (s_hist[i]) any = true;
+    /* 1. key presses since the last tick kick bands */
+    int n = (s_wave_acc > 6) ? 6 : (int)s_wave_acc;
+    s_wave_acc = 0;
+    for (int k = 0; k < n; k++) {
+        uint32_t r = eq_rand();
+        int b = (int)(r % VS_EQ_N);
+        int jump = 14 + (int)((r >> 8) % 11);   /* 14..24 px */
+        if (jump > VS_EQ_MAXH) jump = VS_EQ_MAXH;
+        int side = (jump * 2) / 3;
+        if (s_lvl[b] < jump) s_lvl[b] = (uint8_t)jump;
+        if (b > 0 && s_lvl[b - 1] < side) s_lvl[b - 1] = (uint8_t)side;
+        if (b < VS_EQ_N - 1 && s_lvl[b + 1] < side) s_lvl[b + 1] = (uint8_t)side;
     }
-    s_hist[VS_WAVE_N - 1] = (uint8_t)lv;
+
+    /* 2. peak hold, then fall */
+    bool any = false;
+    for (int i = 0; i < VS_EQ_N; i++) {
+        if (s_lvl[i] > s_peak[i]) {
+            s_peak[i] = s_lvl[i];
+            s_hold[i] = 8;                       /* 8 ticks x 50 ms */
+        } else if (s_hold[i] > 0) {
+            s_hold[i]--;
+        } else if (s_peak[i] > s_lvl[i]) {
+            s_peak[i]--;
+        }
+        if (s_lvl[i] > 2) {
+            s_lvl[i] = (uint8_t)((s_lvl[i] * 4) / 5);
+        } else {
+            s_lvl[i] = 0;
+        }
+        if (s_lvl[i] || s_peak[i]) any = true;
+    }
 
     if (any || s_wave_dirty) {
-        draw_wave();
+        draw_eq();
         s_wave_dirty = any;   /* one last redraw once everything is flat */
     }
 }
@@ -400,7 +438,7 @@ static void refresh_all(void) {
     upd_signal();
     upd_scanner_battery();
     upd_waiting();
-    draw_wave();
+    draw_eq();
 }
 
 /* ========== Create / destroy ========== */
@@ -421,8 +459,9 @@ static void clear_pointers(void) {
     for (int i = 0; i < 5; i++) {
         s_sig[i] = NULL;
     }
-    for (int i = 0; i < VS_WAVE_N; i++) {
-        s_wave[i] = NULL;
+    for (int i = 0; i < VS_EQ_N; i++) {
+        s_eq[i] = NULL;
+        s_cap[i] = NULL;
     }
 }
 
@@ -472,11 +511,13 @@ static void build(lv_obj_t *parent) {
     s_conn_lbl = vs_label(s_conn_chip, &JetBrainsMono_Bold_12, 0xFFFFFF, "BLE 0",
                           0, 3, 62, LV_TEXT_ALIGN_CENTER);
 
-    /* Typing activity wave (new): bars scroll left every 100 ms */
-    for (int i = 0; i < VS_WAVE_N; i++) {
-        s_wave[i] = vs_rect(s_root, VS_WAVE_X + i * VS_WAVE_PITCH, VS_WAVE_BASE - 2, VS_WAVE_W, 2, p->disabled);
+    /* Typing equalizer: 16 bands that jump on key presses and fall back */
+    for (int i = 0; i < VS_EQ_N; i++) {
+        s_eq[i] = vs_rect(s_root, VS_EQ_X + i * VS_EQ_PITCH, VS_EQ_BASE - 2, VS_EQ_W, 2, p->disabled);
+        s_cap[i] = vs_rect(s_root, VS_EQ_X + i * VS_EQ_PITCH, VS_EQ_BASE - 5, VS_EQ_W, 2, p->number);
+        vs_show(s_cap[i], false);
     }
-    s_wave_timer = lv_timer_create(wave_tick, 100, NULL);
+    s_wave_timer = lv_timer_create(wave_tick, 50, NULL);
 
     /* Layer: heading + editor tabs (YADS: y=82 heading, numbers below) */
     s_layer_t = vs_label(s_root, &JetBrainsMono_Regular_12, p->desc, "Layer", 90, 80, 100, LV_TEXT_ALIGN_CENTER);
@@ -542,7 +583,9 @@ lv_obj_t *vscode_layout_create(lv_obj_t *parent) {
         LOG_WRN("VSCode layout already created");
         return s_root;
     }
-    memset(s_hist, 0, sizeof(s_hist));
+    memset(s_lvl, 0, sizeof(s_lvl));
+    memset(s_peak, 0, sizeof(s_peak));
+    memset(s_hold, 0, sizeof(s_hold));
     s_wave_acc = 0;
     s_wave_dirty = false;
     s_parent = parent;
