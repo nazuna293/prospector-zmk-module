@@ -48,11 +48,11 @@ static const hm_palette_t PAL[2] = {
         .text = 0x9D9D9D, .comment = 0x6A9955,
         .name = "Dark Modern",
     },
-    {   /* Light 2026 */
-        .bg = 0xFFFFFF,
-        .cell = {0xEFEFF2, 0xEDA5A5, 0xDE6666, 0xCC2D2D},
-        .text = 0x606060, .comment = 0x6E7781,
-        .name = "Light 2026",
+    {   /* COBOL Green: black screen, green ramp (dark green -> phosphor green) */
+        .bg = 0x000000,
+        .cell = {0x0F2610, 0x2F8F1E, 0x3FC524, 0x4AF626},
+        .text = 0x2FA11A, .comment = 0x39C41E,
+        .name = "COBOL Green",
     },
 };
 

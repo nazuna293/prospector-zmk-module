@@ -5,9 +5,9 @@
  * (custom_status_screen.c): name y=25 / WPM left / connection right /
  * layer centre / modifiers y~145 / battery bar near the bottom / signal row y=219.
  *
- * Colours: VS Code "Dark Modern" and "Light 2026" (microsoft/vscode
+ * Colours: VS Code "Dark Modern" (microsoft/vscode
  * extensions/theme-defaults/themes/*.json). A few values that the theme files do
- * not define (selection tint, warning text in light theme, ...) are estimates.
+ * not define (selection tint, ...) are estimates. "COBOL Green" is a classic green-screen terminal theme.
  */
 #include "vscode_layout.h"
 #include "display_settings.h"
@@ -46,6 +46,7 @@ typedef struct {
     uint32_t accent;      /* focusBorder / statusBarItem.remoteBackground */
     uint32_t sel;         /* editor.selectionBackground */
     uint32_t on_sel;      /* text on selection */
+    uint32_t on_accent;   /* text on an accent-coloured chip */
     uint32_t number;      /* numeric literal */
     uint32_t comment;     /* comment */
     uint32_t warn;        /* warning text */
@@ -62,20 +63,20 @@ static const vs_palette_t PAL[2] = {
     {   /* Dark Modern */
         .editor = 0x1F1F1F, .chrome = 0x181818, .border = 0x2B2B2B,
         .fg = 0xCCCCCC, .desc = 0x9D9D9D, .disabled = 0x767676, .tab_dim = 0x6E7681,
-        .accent = 0x0078D4, .sel = 0x264F78, .on_sel = 0xFFFFFF,
+        .accent = 0x0078D4, .sel = 0x264F78, .on_sel = 0xFFFFFF, .on_accent = 0xFFFFFF,
         .number = 0xB5CEA8, .comment = 0x6A9955,
         .warn = 0xCCA700, .err = 0xF85149, .warn_bg = 0x7A6400, .err_bg = 0xC72E0F,
         .offline = 0x6C1717, .neutral = 0x3A3D40, .band_fg = 0xCCCCCC,
         .name = "Dark Modern",
     },
-    {   /* Light 2026 */
-        .editor = 0xFFFFFF, .chrome = 0xFAFAFD, .border = 0xF0F1F2,
-        .fg = 0x202020, .desc = 0x606060, .disabled = 0xBBBBBB, .tab_dim = 0x606060,
-        .accent = 0x0069CC, .sel = 0xB3D0F0, .on_sel = 0x202020,
-        .number = 0x0550AE, .comment = 0x6E7781,
-        .warn = 0x8A6D00, .err = 0xAD0707, .warn_bg = 0x7A6400, .err_bg = 0xC72E0F,
-        .offline = 0xC93C3C, .neutral = 0x8C8C8C, .band_fg = 0x606060,
-        .name = "Light 2026",
+    {   /* COBOL Green: black screen, phosphor green (classic mainframe terminal) */
+        .editor = 0x000000, .chrome = 0x031203, .border = 0x0B3A0B,
+        .fg = 0x4AF626, .desc = 0x2FA11A, .disabled = 0x1B5E12, .tab_dim = 0x2A8A1A,
+        .accent = 0x4AF626, .sel = 0x0E4D0E, .on_sel = 0xC8FFC0, .on_accent = 0x000000,
+        .number = 0x9DFF8A, .comment = 0x39C41E,
+        .warn = 0xFFC800, .err = 0xFF4B3A, .warn_bg = 0x7A6400, .err_bg = 0xC72E0F,
+        .offline = 0x7A1A1A, .neutral = 0x1B5E12, .band_fg = 0x2FA11A,
+        .name = "COBOL Green",
     },
 };
 
@@ -223,6 +224,8 @@ static void upd_conn(void) {
     }
     lv_label_set_text(s_conn_lbl, buf);
     lv_obj_set_style_bg_color(s_conn_chip, lv_color_hex(col), LV_PART_MAIN);
+    lv_obj_set_style_text_color(s_conn_lbl, lv_color_hex(col == p->accent ? p->on_accent : 0xFFFFFF),
+                                LV_PART_MAIN);
 }
 
 /* Layer: editor tabs. The active tab gets the editor background, an accent top

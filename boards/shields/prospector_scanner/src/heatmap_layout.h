@@ -4,7 +4,7 @@
  * Draws the physical key layout of the Enigma_01_Pro (layout_b, 41 keys) and shades each key by
  * how often it was pressed over the last ~10 minutes (4 levels). The keyboard sends only this
  * accumulated, quantised frequency - never which key was pressed just now.
- * Palettes: Dark Modern / Light 2026 (double-tap to switch).
+ * Palettes: Dark Modern / COBOL Green (double-tap to switch).
  */
 #pragma once
 

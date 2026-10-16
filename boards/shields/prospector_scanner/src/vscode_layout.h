@@ -9,7 +9,7 @@
  *   modifiers  -> keybinding labels
  *   battery    -> progress bar (severity colours)
  *   signal     -> status bar strip
- * Palettes: Dark Modern / Light 2026 (double-tap to switch).
+ * Palettes: Dark Modern / COBOL Green (double-tap to switch).
  * Design notes: Keyboard/ZMK/Prospector-VSCode配色設計.md in the owner's vault.
  */
 #pragma once
@@ -26,7 +26,7 @@ void vscode_layout_update_scanner_battery(int level);
 void vscode_layout_push_keys(uint8_t n);   /* key presses since the last call (typing wave) */
 void vscode_layout_destroy(void);
 
-/* Dark Modern <-> Light 2026 */
+/* Dark Modern <-> COBOL Green */
 void vscode_layout_cycle_palette(void);
 uint8_t vscode_layout_get_palette(void);
 const char *vscode_layout_get_palette_name(void);
