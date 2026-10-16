@@ -2456,6 +2456,29 @@ static void ds_slide_switch_event_cb(lv_event_t *e) {
 
 /* ========== System Settings Event Handlers ========== */
 
+/* Bootloader / Reset need a deliberate hold. A plain tap (or the end of a swipe that happens to
+ * land on the button) must not reboot the scanner. */
+#define SS_HOLD_TO_ACTIVATE_MS 1500
+static uint32_t ss_bl_hold_start;
+static uint32_t ss_rst_hold_start;
+
+static bool ss_hold_completed(uint32_t *start, lv_event_code_t code) {
+    if (code == LV_EVENT_PRESSED) {
+        *start = k_uptime_get_32() | 1;   /* never 0 */
+        return false;
+    }
+    if (code == LV_EVENT_RELEASED || code == LV_EVENT_PRESS_LOST) {
+        *start = 0;
+        return false;
+    }
+    if (code == LV_EVENT_PRESSING && *start != 0 &&
+        (k_uptime_get_32() - *start) >= SS_HOLD_TO_ACTIVATE_MS) {
+        *start = 0;
+        return true;
+    }
+    return false;
+}
+
 static void ss_bootloader_btn_event_cb(lv_event_t *e) {
     lv_event_code_t code = lv_event_get_code(e);
 
@@ -2466,7 +2489,7 @@ static void ss_bootloader_btn_event_cb(lv_event_t *e) {
         LOG_INF("Bootloader button: RELEASED");
     }
 
-    if (code == LV_EVENT_CLICKED || code == LV_EVENT_SHORT_CLICKED) {
+    if (ss_hold_completed(&ss_bl_hold_start, code)) {
         LOG_INF("Bootloader button ACTIVATED - entering bootloader mode");
         /* Use Zephyr 4.x RETENTION_BOOT_MODE API for bootloader entry */
         int ret = bootmode_set(BOOT_MODE_TYPE_BOOTLOADER);
@@ -2489,7 +2512,7 @@ static void ss_reset_btn_event_cb(lv_event_t *e) {
         LOG_INF("Reset button: RELEASED");
     }
 
-    if (code == LV_EVENT_CLICKED || code == LV_EVENT_SHORT_CLICKED) {
+    if (ss_hold_completed(&ss_rst_hold_start, code)) {
         LOG_INF("Reset button ACTIVATED - performing system reset");
         sys_reboot(SYS_REBOOT_WARM);
     }
@@ -2816,7 +2839,7 @@ static void create_system_settings_widgets(void) {
     lv_obj_add_event_cb(ss_bootloader_btn, ss_bootloader_btn_event_cb, LV_EVENT_ALL, NULL);
 
     lv_obj_t *bl_label = lv_label_create(ss_bootloader_btn);
-    lv_label_set_text(bl_label, "Enter Bootloader");
+    lv_label_set_text(bl_label, "Hold: Bootloader");
     lv_obj_set_style_text_font(bl_label, &JetBrainsMono_Regular_16, LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(bl_label, lv_color_white(), LV_STATE_DEFAULT);
     lv_obj_center(bl_label);
@@ -2840,7 +2863,7 @@ static void create_system_settings_widgets(void) {
     lv_obj_add_event_cb(ss_reset_btn, ss_reset_btn_event_cb, LV_EVENT_ALL, NULL);
 
     lv_obj_t *rst_label = lv_label_create(ss_reset_btn);
-    lv_label_set_text(rst_label, "System Reset");
+    lv_label_set_text(rst_label, "Hold: Reset");
     lv_obj_set_style_text_font(rst_label, &JetBrainsMono_Regular_16, LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(rst_label, lv_color_white(), LV_STATE_DEFAULT);
     lv_obj_center(rst_label);
