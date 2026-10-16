@@ -69,13 +69,14 @@ static const vs_palette_t PAL[2] = {
         .offline = 0x6C1717, .neutral = 0x3A3D40, .band_fg = 0xCCCCCC,
         .name = "Dark Modern",
     },
-    {   /* COBOL Green: black screen, phosphor green (classic mainframe terminal) */
-        .editor = 0x000000, .chrome = 0x031203, .border = 0x0B3A0B,
-        .fg = 0x4AF626, .desc = 0x2FA11A, .disabled = 0x1B5E12, .tab_dim = 0x2A8A1A,
-        .accent = 0x4AF626, .sel = 0x0E4D0E, .on_sel = 0xC8FFC0, .on_accent = 0x000000,
-        .number = 0x9DFF8A, .comment = 0x39C41E,
+    {   /* COBOL Green: black screen, phosphor green (classic mainframe terminal).
+         * Green = #4DF14D, the same saturation / brightness as the heatmap's red (#F14C4C). */
+        .editor = 0x000000, .chrome = 0x040C04, .border = 0x0F300F,
+        .fg = 0x4DF14D, .desc = 0x339F33, .disabled = 0x1F601F, .tab_dim = 0x2D8C2D,
+        .accent = 0x4DF14D, .sel = 0x164316, .on_sel = 0xB8F9B8, .on_accent = 0x000000,
+        .number = 0x94F794, .comment = 0x3CBC3C,
         .warn = 0xFFC800, .err = 0xFF4B3A, .warn_bg = 0x7A6400, .err_bg = 0xC72E0F,
-        .offline = 0x7A1A1A, .neutral = 0x1B5E12, .band_fg = 0x2FA11A,
+        .offline = 0x7A1A1A, .neutral = 0x1F601F, .band_fg = 0x339F33,
         .name = "COBOL Green",
     },
 };
