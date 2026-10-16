@@ -7,6 +7,7 @@
 #include "system_settings_widget.h"
 #include "display_settings.h"
 #include "fonts.h"
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/reboot.h>
 
@@ -43,6 +44,29 @@ static void update_channel_value_display(struct zmk_widget_system_settings *widg
 
 // ========== Button Event Handlers ==========
 
+/* Bootloader / Reset need a deliberate hold. A plain tap (or the end of a swipe that happens to
+ * land on the button) must not reboot the scanner. */
+#define HOLD_TO_ACTIVATE_MS 1500
+static uint32_t bl_press_start;
+static uint32_t rst_press_start;
+
+static bool hold_completed(uint32_t *start, lv_event_code_t code) {
+    if (code == LV_EVENT_PRESSED) {
+        *start = k_uptime_get_32() | 1;   /* never 0 */
+        return false;
+    }
+    if (code == LV_EVENT_RELEASED || code == LV_EVENT_PRESS_LOST) {
+        *start = 0;
+        return false;
+    }
+    if (code == LV_EVENT_PRESSING && *start != 0 &&
+        (k_uptime_get_32() - *start) >= HOLD_TO_ACTIVATE_MS) {
+        *start = 0;
+        return true;
+    }
+    return false;
+}
+
 static void bootloader_btn_event_cb(lv_event_t *e) {
     lv_event_code_t code = lv_event_get_code(e);
 
@@ -62,7 +86,7 @@ static void bootloader_btn_event_cb(lv_event_t *e) {
 
     LOG_INF("🔵 Bootloader button: %s (code=%d)", event_name, code);
 
-    if (code == LV_EVENT_CLICKED || code == LV_EVENT_SHORT_CLICKED) {
+    if (hold_completed(&bl_press_start, code)) {
         LOG_INF("🔵🔵🔵 Bootloader button ACTIVATED - entering bootloader mode NOW!");
 
         // Reboot with UF2 bootloader magic value
@@ -94,7 +118,7 @@ static void reset_btn_event_cb(lv_event_t *e) {
 
     LOG_INF("🔴 Reset button: %s (code=%d)", event_name, code);
 
-    if (code == LV_EVENT_CLICKED || code == LV_EVENT_SHORT_CLICKED) {
+    if (hold_completed(&rst_press_start, code)) {
         LOG_INF("🔴🔴🔴 Reset button ACTIVATED - performing system reset NOW!");
         LOG_INF("🔴 Performing warm reboot...");
 
@@ -252,7 +276,7 @@ int zmk_widget_system_settings_init(struct zmk_widget_system_settings *widget, l
     LOG_INF("Creating Bootloader button...");
     widget->bootloader_btn = create_styled_button(
         widget->obj,
-        "Enter Bootloader",
+        "Hold: Bootloader",
         lv_color_hex(0x4A90E2),  // Normal: Sky blue
         lv_color_hex(0x357ABD),  // Pressed: Darker blue
         0, -15  // Y: -5→-15 (moved up)
@@ -273,7 +297,7 @@ int zmk_widget_system_settings_init(struct zmk_widget_system_settings *widget, l
     LOG_INF("Creating Reset button...");
     widget->reset_btn = create_styled_button(
         widget->obj,
-        "System Reset",
+        "Hold: Reset",
         lv_color_hex(0xE24A4A),  // Normal: Soft red
         lv_color_hex(0xC93A3A),  // Pressed: Darker red
         0, 55   // Y: 65→55 (moved up)
