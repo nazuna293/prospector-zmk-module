@@ -141,20 +141,24 @@ ZMK_SUBSCRIPTION(prospector_peripheral_battery, zmk_peripheral_battery_state_cha
 #endif
 
 // ===== Typing heatmap: accumulated key frequency (privacy-friendly) =====
-// Per key position press counts, decayed every 30 s (x0.9, i.e. roughly the last 10 minutes),
-// quantised to 4 levels relative to the busiest key and sent in 3 rotating slices.
+// Per key position press counts (8 fractional bits, so rarely used keys decay smoothly instead of
+// losing a whole press per step), decayed every 30 s (x0.97, half-life about 11 minutes),
+// quantised to 4 levels relative to the busiest key (2 % / 12 % / 40 %: a long tail of rarely
+// used keys still shows up) and sent in 3 rotating slices.
 // Never carries which key was pressed just now.
 #define HM_KEYS       42
 #define HM_PER_SLICE  14
 #define HM_SLICES     3
 #define HM_DECAY_MS   30000
-static uint16_t hm_count[HM_KEYS];
+#define HM_ONE        256u             /* one key press in fixed point */
+#define HM_COUNT_MAX  (60000u * HM_ONE)
+static uint32_t hm_count[HM_KEYS];
 static uint32_t hm_last_decay;
 static uint8_t hm_slice;
 
 static void heatmap_record(uint32_t position) {
-    if (position < HM_KEYS && hm_count[position] < 60000) {
-        hm_count[position]++;
+    if (position < HM_KEYS && hm_count[position] < HM_COUNT_MAX) {
+        hm_count[position] += HM_ONE;
     }
 }
 
@@ -164,11 +168,11 @@ static void heatmap_pack(struct zmk_status_adv_data *md) {
     if (now - hm_last_decay >= HM_DECAY_MS) {
         hm_last_decay = now;
         for (int i = 0; i < HM_KEYS; i++) {
-            hm_count[i] = (uint16_t)((hm_count[i] * 9) / 10);
+            hm_count[i] = (uint32_t)(((uint64_t)hm_count[i] * 97u) / 100u);
         }
     }
 
-    uint16_t max_count = 0;
+    uint32_t max_count = 0;
     for (int i = 0; i < HM_KEYS; i++) {
         if (hm_count[i] > max_count) {
             max_count = hm_count[i];
@@ -180,8 +184,8 @@ static void heatmap_pack(struct zmk_status_adv_data *md) {
         int idx = hm_slice * HM_PER_SLICE + k;
         uint32_t level = 0;
         if (idx < HM_KEYS && max_count > 0 && hm_count[idx] > 0) {
-            uint32_t pct = ((uint32_t)hm_count[idx] * 100) / max_count;
-            level = (pct < 10) ? 0 : (pct < 35) ? 1 : (pct < 70) ? 2 : 3;
+            uint32_t pct = (uint32_t)(((uint64_t)hm_count[idx] * 100u) / max_count);
+            level = (pct < 2) ? 0 : (pct < 12) ? 1 : (pct < 40) ? 2 : 3;
         }
         word |= level << (2 * k);
     }

@@ -581,9 +581,9 @@ static void build(lv_obj_t *parent) {
     s_wait_cover = vs_rect(s_root, 0, 0, VS_W, VS_BAND_Y, p->editor);
     s_wait_name = vs_label(s_wait_cover, &JetBrainsMono_Bold_16, p->desc, "Scanning...", 40, 22, 200,
                            LV_TEXT_ALIGN_CENTER);
-    s_wait_l1 = vs_label(s_wait_cover, &JetBrainsMono_Regular_12, p->comment, "// waiting for keyboard...",
+    s_wait_l1 = vs_label(s_wait_cover, &JetBrainsMono_Bold_12, p->comment, "// waiting for keyboard...",
                          20, 100, 240, LV_TEXT_ALIGN_CENTER);
-    s_wait_l2 = vs_label(s_wait_cover, &JetBrainsMono_Regular_12, p->comment, "// scanning", 20, 120, 240,
+    s_wait_l2 = vs_label(s_wait_cover, &JetBrainsMono_Bold_12, p->comment, "// scanning", 20, 120, 240,
                          LV_TEXT_ALIGN_CENTER);
 
     /* Status bar strip (YADS: signal row y=219: Ch x=62, RX x=102, bars x=130, dBm x=167, Hz x=222) */

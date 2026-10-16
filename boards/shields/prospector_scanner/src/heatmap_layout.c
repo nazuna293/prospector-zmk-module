@@ -123,7 +123,7 @@ static void build(lv_obj_t *parent) {
     lv_obj_clear_flag(s_root, LV_OBJ_FLAG_SCROLLABLE);
 
     hm_label(s_root, &JetBrainsMono_Bold_16, p->text, "typing heatmap", HM_X0, 14, 240, LV_TEXT_ALIGN_LEFT);
-    hm_label(s_root, &JetBrainsMono_Regular_10, p->text, "last ~10 min, busiest key = darkest", HM_X0, 36, 240,
+    hm_label(s_root, &JetBrainsMono_Regular_10, p->text, "recent ~20 min, busiest key = reddest", HM_X0, 36, 240,
              LV_TEXT_ALIGN_LEFT);
 
     for (int i = 0; i < HM_NKEYS; i++) {
@@ -142,7 +142,7 @@ static void build(lv_obj_t *parent) {
     }
     hm_label(s_root, &JetBrainsMono_Regular_10, p->text, "more", HM_X0 + 168, 200, 30, LV_TEXT_ALIGN_LEFT);
 
-    s_note = hm_label(s_root, &JetBrainsMono_Regular_12, p->comment, "// waiting for heatmap data...", HM_X0, 220,
+    s_note = hm_label(s_root, &JetBrainsMono_Bold_12, p->comment, "// waiting for heatmap data...", HM_X0, 220,
                       240, LV_TEXT_ALIGN_LEFT);
 }
 
