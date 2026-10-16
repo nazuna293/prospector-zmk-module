@@ -388,18 +388,29 @@ static void draw_eq(void) {
 static void wave_tick(lv_timer_t *t) {
     ARG_UNUSED(t);
 
-    /* 1. key presses since the last tick kick bands */
-    int n = (s_wave_acc > 6) ? 6 : (int)s_wave_acc;
+    /* 1. key presses since the last tick kick bands.
+     * Soft limit: when 10 or more bands are already up, a new kick is smaller (60 %) and does
+     * not spill into the neighbours, so even a long burst of fast typing (WPM 120-140 is about
+     * 10-12 presses/s) never pins every bar at the top. */
+    int n = (s_wave_acc > 4) ? 4 : (int)s_wave_acc;
     s_wave_acc = 0;
     for (int k = 0; k < n; k++) {
+        int lit = 0;
+        for (int i = 0; i < VS_EQ_N; i++) {
+            if (s_lvl[i] > 6) lit++;
+        }
+        bool crowded = (lit >= 10);
         uint32_t r = eq_rand();
         int b = (int)(r % VS_EQ_N);
-        int jump = 14 + (int)((r >> 8) % 11);   /* 14..24 px */
+        int jump = 12 + (int)((r >> 8) % 15);          /* 12..26 px */
+        if (crowded) jump = (jump * 6) / 10;
         if (jump > VS_EQ_MAXH) jump = VS_EQ_MAXH;
-        int side = (jump * 2) / 3;
+        int side = crowded ? 0 : (jump * 2) / 3;
         if (s_lvl[b] < jump) s_lvl[b] = (uint8_t)jump;
-        if (b > 0 && s_lvl[b - 1] < side) s_lvl[b - 1] = (uint8_t)side;
-        if (b < VS_EQ_N - 1 && s_lvl[b + 1] < side) s_lvl[b + 1] = (uint8_t)side;
+        if (side > 0) {
+            if (b > 0 && s_lvl[b - 1] < side) s_lvl[b - 1] = (uint8_t)side;
+            if (b < VS_EQ_N - 1 && s_lvl[b + 1] < side) s_lvl[b + 1] = (uint8_t)side;
+        }
     }
 
     /* 2. peak hold, then fall */
@@ -414,7 +425,7 @@ static void wave_tick(lv_timer_t *t) {
             s_peak[i]--;
         }
         if (s_lvl[i] > 2) {
-            s_lvl[i] = (uint8_t)((s_lvl[i] * 4) / 5);
+            s_lvl[i] = (uint8_t)((s_lvl[i] * 17) / 20);   /* x0.85 per 50 ms tick */
         } else {
             s_lvl[i] = 0;
         }
