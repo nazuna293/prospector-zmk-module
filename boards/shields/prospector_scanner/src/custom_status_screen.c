@@ -574,6 +574,11 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
             if (vscode_active()) {
                 vscode_layout_set_waiting();
             }
+            /* No keyboard: heatmap layout hides its key map until one is back */
+            if (current_screen == SCREEN_PROSPECTOR_DISPLAY) {
+                struct prospector_keyboard_data none = {0};
+                prospector_layouts_update(&none);
+            }
 
             /* Apply timeout brightness if configured */
 #ifdef CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS

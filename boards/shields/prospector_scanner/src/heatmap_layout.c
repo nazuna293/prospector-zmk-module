@@ -63,6 +63,7 @@ static lv_obj_t *s_parent;
 static lv_obj_t *s_root;
 static lv_obj_t *s_key[HM_NKEYS];
 static lv_obj_t *s_note;
+static lv_obj_t *s_map;   /* keys + legend; shown only while a keyboard sends heatmap data */
 static uint8_t s_shown[HM_NKEYS];            /* level currently drawn per key */
 static uint8_t s_heat[PROSPECTOR_HEAT_KEYS]; /* latest levels */
 static bool s_heat_valid;
@@ -101,6 +102,13 @@ static void draw_levels(bool force) {
         s_shown[i] = lv;
         lv_obj_set_style_bg_color(s_key[i], lv_color_hex(p->cell[lv]), LV_PART_MAIN);
     }
+    if (s_map) {
+        if (s_heat_valid) {
+            lv_obj_clear_flag(s_map, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(s_map, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
     if (s_note) {
         if (s_heat_valid) {
             lv_obj_add_flag(s_note, LV_OBJ_FLAG_HIDDEN);
@@ -127,23 +135,31 @@ static void build(lv_obj_t *parent) {
     hm_label(s_root, &JetBrainsMono_Regular_10, p->text, "recent ~10 min, busiest key = reddest", HM_X0, 36, 240,
              LV_TEXT_ALIGN_LEFT);
 
+    s_map = lv_obj_create(s_root);
+    lv_obj_set_size(s_map, HM_W, HM_H);
+    lv_obj_set_pos(s_map, 0, 0);
+    lv_obj_set_style_bg_opa(s_map, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_border_width(s_map, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(s_map, 0, LV_PART_MAIN);
+    lv_obj_clear_flag(s_map, LV_OBJ_FLAG_SCROLLABLE);
+
     for (int i = 0; i < HM_NKEYS; i++) {
         int x = HM_X0 + (KEYS[i][0] * HM_UNIT) / 100;
         int y = HM_Y0 + (KEYS[i][1] * HM_UNIT) / 100;
         int w = (KEYS[i][2] * HM_UNIT) / 100 - 2;
         int h = (KEYS[i][3] * HM_UNIT) / 100 - 2;
-        s_key[i] = hm_rect(s_root, x, y, w, h, p->cell[0], 3);
+        s_key[i] = hm_rect(s_map, x, y, w, h, p->cell[0], 3);
         s_shown[i] = 0;
     }
 
     /* legend */
-    hm_label(s_root, &JetBrainsMono_Regular_10, p->text, "less", HM_X0 + 56, 200, 30, LV_TEXT_ALIGN_LEFT);
+    hm_label(s_map, &JetBrainsMono_Regular_10, p->text, "less", HM_X0 + 56, 200, 30, LV_TEXT_ALIGN_LEFT);
     for (int k = 0; k < 4; k++) {
-        hm_rect(s_root, HM_X0 + 92 + k * 18, 200, 14, 12, p->cell[k], 2);
+        hm_rect(s_map, HM_X0 + 92 + k * 18, 200, 14, 12, p->cell[k], 2);
     }
-    hm_label(s_root, &JetBrainsMono_Regular_10, p->text, "more", HM_X0 + 168, 200, 30, LV_TEXT_ALIGN_LEFT);
+    hm_label(s_map, &JetBrainsMono_Regular_10, p->text, "more", HM_X0 + 168, 200, 30, LV_TEXT_ALIGN_LEFT);
 
-    s_note = hm_label(s_root, &JetBrainsMono_Bold_12, p->comment, "// waiting for heatmap data...", HM_X0, 220,
+    s_note = hm_label(s_root, &JetBrainsMono_Bold_12, p->comment, "// waiting for keyboard...", HM_X0, 120,
                       240, LV_TEXT_ALIGN_LEFT);
 }
 
@@ -164,6 +180,7 @@ static void teardown(void) {
     }
     s_root = NULL;
     s_note = NULL;
+    s_map = NULL;
     for (int i = 0; i < HM_NKEYS; i++) {
         s_key[i] = NULL;
     }
