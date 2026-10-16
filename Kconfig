@@ -267,6 +267,15 @@ config PROSPECTOR_DEFAULT_LAYOUT
       3 = Radii (circular wheel indicator)
       4 = VSCode (VS Code style tabs / status bar, YADS information layout)
 
+config PROSPECTOR_DISPLAY_HEATMAP_ONLY
+    bool "The layout screen (left swipe from the main screen) shows only the typing heatmap"
+    default n
+    depends on PROSPECTOR_MODE_SCANNER
+    help
+      Replaces the Field / Operator / Radii / VSCode layouts of the layout screen with the typing
+      heatmap (accumulated key frequency over ~10 min). Swiping up/down no longer changes layouts;
+      double-tap still switches the palette.
+
 config PROSPECTOR_MAIN_VSCODE
     bool "Use the VSCode layout as the main screen"
     default n

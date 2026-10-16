@@ -140,10 +140,67 @@ ZMK_LISTENER(prospector_peripheral_battery, peripheral_battery_listener);
 ZMK_SUBSCRIPTION(prospector_peripheral_battery, zmk_peripheral_battery_state_changed);
 #endif
 
+// ===== Typing heatmap: accumulated key frequency (privacy-friendly) =====
+// Per key position press counts, decayed every 30 s (x0.9, i.e. roughly the last 10 minutes),
+// quantised to 4 levels relative to the busiest key and sent in 3 rotating slices.
+// Never carries which key was pressed just now.
+#define HM_KEYS       42
+#define HM_PER_SLICE  14
+#define HM_SLICES     3
+#define HM_DECAY_MS   30000
+static uint16_t hm_count[HM_KEYS];
+static uint32_t hm_last_decay;
+static uint8_t hm_slice;
+
+static void heatmap_record(uint32_t position) {
+    if (position < HM_KEYS && hm_count[position] < 60000) {
+        hm_count[position]++;
+    }
+}
+
+// Standalone keyboards only: fills peripheral_battery[0..2] and connection_count (unused there)
+static void heatmap_pack(struct zmk_status_adv_data *md) {
+    uint32_t now = k_uptime_get_32();
+    if (now - hm_last_decay >= HM_DECAY_MS) {
+        hm_last_decay = now;
+        for (int i = 0; i < HM_KEYS; i++) {
+            hm_count[i] = (uint16_t)((hm_count[i] * 9) / 10);
+        }
+    }
+
+    uint16_t max_count = 0;
+    for (int i = 0; i < HM_KEYS; i++) {
+        if (hm_count[i] > max_count) {
+            max_count = hm_count[i];
+        }
+    }
+
+    uint32_t word = 0;
+    for (int k = 0; k < HM_PER_SLICE; k++) {
+        int idx = hm_slice * HM_PER_SLICE + k;
+        uint32_t level = 0;
+        if (idx < HM_KEYS && max_count > 0 && hm_count[idx] > 0) {
+            uint32_t pct = ((uint32_t)hm_count[idx] * 100) / max_count;
+            level = (pct < 10) ? 0 : (pct < 35) ? 1 : (pct < 70) ? 2 : 3;
+        }
+        word |= level << (2 * k);
+    }
+    word |= (uint32_t)hm_slice << 28;
+
+    md->peripheral_battery[0] = (uint8_t)(word & 0xFF);
+    md->peripheral_battery[1] = (uint8_t)((word >> 8) & 0xFF);
+    md->peripheral_battery[2] = (uint8_t)((word >> 16) & 0xFF);
+    md->connection_count = (uint8_t)((word >> 24) & 0xFF);
+    md->status_flags |= ZMK_STATUS_FLAG_HEATMAP;
+
+    hm_slice = (hm_slice + 1) % HM_SLICES;
+}
+
 // Activity-based update system: key presses trigger high-frequency updates
 static int position_state_listener(const zmk_event_t *eh) {
     const struct zmk_position_state_changed *ev = as_zmk_position_state_changed(eh);
     if (ev && ev->state) { // Only on key press (not release)
+        heatmap_record(ev->position);
         uint32_t now = k_uptime_get_32();
         last_activity_time = now;
 
@@ -885,6 +942,10 @@ static void build_manufacturer_payload(void) {
     manufacturer_data.channel = CONFIG_PROSPECTOR_CHANNEL;
 #else
     manufacturer_data.channel = 0;  // Default: broadcast to all
+#endif
+
+#if !IS_ENABLED(CONFIG_ZMK_SPLIT)
+    heatmap_pack(&manufacturer_data);
 #endif
 
     const char *role_str =

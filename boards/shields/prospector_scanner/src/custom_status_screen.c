@@ -639,6 +639,7 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
             /* Layer name from BLE advertisement (4 chars, not null-terminated) */
             memcpy(kb_data.current_layer_name, data.layer_name, 4);
             kb_data.current_layer_name[4] = '\0';
+            kb_data.heat_valid = scanner_copy_heatmap(kb_data.heat, PROSPECTOR_HEAT_KEYS);
             prospector_layouts_update(&kb_data);
         } else {
             /* SCREEN_MAIN: Update YADS-style widgets */

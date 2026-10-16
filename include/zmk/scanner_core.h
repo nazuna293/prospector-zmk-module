@@ -85,6 +85,15 @@ bool scanner_get_pending_battery(int *level);
  */
 uint8_t scanner_take_key_delta(void);
 
+/** Number of key positions in the heatmap (must match HM_KEYS in status_advertisement.c) */
+#define SCANNER_HEAT_KEYS 42
+
+/**
+ * @brief Copy the typing heatmap of the selected keyboard (levels 0-3 per key position)
+ * @return true if the keyboard sends a heatmap and all three slices have arrived
+ */
+bool scanner_copy_heatmap(uint8_t *out, int n);
+
 /**
  * @brief Get last received keyboard firmware version
  */

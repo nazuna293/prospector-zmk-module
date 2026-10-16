@@ -292,9 +292,16 @@ static void fill_pending_from_selected(void) {
     pending_data.profile = PROSPECTOR_DECODE_PROFILE(d->profile_slot);
     pending_data.modifiers = d->modifier_flags;
     pending_data.bat[0] = d->battery_level;
-    pending_data.bat[1] = d->peripheral_battery[0];
-    pending_data.bat[2] = d->peripheral_battery[1];
-    pending_data.bat[3] = d->peripheral_battery[2];
+    if (d->status_flags & ZMK_STATUS_FLAG_HEATMAP) {
+        /* those bytes carry a heatmap slice, not peripheral batteries */
+        pending_data.bat[1] = 0;
+        pending_data.bat[2] = 0;
+        pending_data.bat[3] = 0;
+    } else {
+        pending_data.bat[1] = d->peripheral_battery[0];
+        pending_data.bat[2] = d->peripheral_battery[1];
+        pending_data.bat[3] = d->peripheral_battery[2];
+    }
 
     /* Decode keyboard firmware version */
     pending_data.kb_version_major = PROSPECTOR_DECODE_VERSION_MAJOR(d->version);
@@ -348,6 +355,25 @@ static atomic_t adv_receive_count = ATOMIC_INIT(0);  /* Incremented by BT RX (at
 
 /* Key presses seen on the selected keyboard since the display last asked */
 static atomic_t key_delta_accum = ATOMIC_INIT(0);
+
+/* Typing heatmap of the selected keyboard: 3 slices of 14 keys, 2 bits each (see
+ * ZMK_STATUS_FLAG_HEATMAP in status_advertisement.h). Written under data_mutex by the
+ * process work item, read under data_mutex by scanner_copy_heatmap(). */
+static uint8_t hm_levels[SCANNER_HEAT_KEYS];
+static uint8_t hm_slices_seen;   /* bit mask of slices received since the keyboard changed */
+static int hm_keyboard = -1;
+
+bool scanner_copy_heatmap(uint8_t *out, int n) {
+    if (!mutex_initialized || !out || n <= 0) return false;
+    if (k_mutex_lock(&data_mutex, K_MSEC(10)) != 0) return false;
+    bool ok = (hm_slices_seen == 0x7);
+    if (ok) {
+        int m = (n < SCANNER_HEAT_KEYS) ? n : SCANNER_HEAT_KEYS;
+        memcpy(out, hm_levels, m);
+    }
+    k_mutex_unlock(&data_mutex);
+    return ok;
+}
 
 uint8_t scanner_take_key_delta(void) {
     atomic_val_t v = atomic_set(&key_delta_accum, 0);
@@ -480,6 +506,29 @@ void scanner_process_incoming(void) {
             }
             if (kdelta > 0) {
                 atomic_add(&key_delta_accum, kdelta);
+            }
+        }
+
+        /* Typing heatmap slice (selected keyboard only) */
+        if (index == selected_keyboard && (entry.data.status_flags & ZMK_STATUS_FLAG_HEATMAP)) {
+            if (hm_keyboard != index) {
+                hm_keyboard = index;
+                hm_slices_seen = 0;
+                memset(hm_levels, 0, sizeof(hm_levels));
+            }
+            uint32_t w = (uint32_t)entry.data.peripheral_battery[0] |
+                         ((uint32_t)entry.data.peripheral_battery[1] << 8) |
+                         ((uint32_t)entry.data.peripheral_battery[2] << 16) |
+                         ((uint32_t)entry.data.connection_count << 24);
+            uint32_t slice = (w >> 28) & 0x3;
+            if (slice < 3) {
+                for (int k = 0; k < 14; k++) {
+                    int idx = (int)slice * 14 + k;
+                    if (idx < SCANNER_HEAT_KEYS) {
+                        hm_levels[idx] = (uint8_t)((w >> (2 * k)) & 0x3);
+                    }
+                }
+                hm_slices_seen |= (uint8_t)(1u << slice);
             }
         }
 

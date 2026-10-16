@@ -47,7 +47,14 @@ struct zmk_status_adv_data {
 #define ZMK_STATUS_FLAG_USB_HID_READY    (1 << 3)
 #define ZMK_STATUS_FLAG_BLE_CONNECTED    (1 << 4)
 #define ZMK_STATUS_FLAG_BLE_BONDED       (1 << 5)
-// Bits 6-7 reserved for future use
+// Bit 6 reserved for future use
+// Bit 7: this packet carries one slice of the typing heatmap (accumulated key frequency, 4 levels,
+// decaying over ~10 min; never which key was pressed just now). The slice is packed into
+// peripheral_battery[0..2] and connection_count (little endian, 32 bits):
+//   bits 0-27  : 14 keys x 2 bits (level 0-3), keys slice*14 .. slice*14+13
+//   bits 28-29 : slice id 0-2
+// Only set by a standalone (non-split) keyboard, where those bytes are otherwise unused.
+#define ZMK_STATUS_FLAG_HEATMAP          (1 << 7)
 
 /**
  * @brief Modifier key flags bit definitions (for modifier_flags field)

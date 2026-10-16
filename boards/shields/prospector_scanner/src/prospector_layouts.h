@@ -34,8 +34,12 @@ typedef enum {
     PROSPECTOR_LAYOUT_OPERATOR,      /* Minimalist dot indicators */
     PROSPECTOR_LAYOUT_RADII,         /* Circular wheel indicator */
     PROSPECTOR_LAYOUT_VSCODE,        /* VS Code style (tabs / status bar), YADS information layout */
+    PROSPECTOR_LAYOUT_HEATMAP,       /* Typing heatmap on the physical key layout */
     PROSPECTOR_LAYOUT_COUNT
 } prospector_layout_t;
+
+/* Key positions in the typing heatmap (same as SCANNER_HEAT_KEYS in zmk/scanner_core.h) */
+#define PROSPECTOR_HEAT_KEYS 42
 
 /**
  * @brief Keyboard data for display (from Periodic ADV)
@@ -60,6 +64,10 @@ struct prospector_keyboard_data {
     uint8_t layer_count;
     char layer_names[10][8];
     int8_t peripheral_rssi[3];
+
+    /* Typing heatmap: level 0-3 per key position (accumulated frequency, ~10 min) */
+    uint8_t heat[PROSPECTOR_HEAT_KEYS];
+    bool heat_valid;
 
     /* Validity flags */
     bool has_dynamic_data;

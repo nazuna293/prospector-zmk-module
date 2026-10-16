@@ -13,12 +13,17 @@
 #include "radii_layout.h"
 #include "field_layout.h"
 #include "vscode_layout.h"
+#include "heatmap_layout.h"
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(prospector_layouts, CONFIG_ZMK_LOG_LEVEL);
 
 /* Available layouts: Operator and Radii */
+#ifdef CONFIG_PROSPECTOR_DISPLAY_HEATMAP_ONLY
+static prospector_layout_t current_layout = PROSPECTOR_LAYOUT_HEATMAP;
+#else
 static prospector_layout_t current_layout = PROSPECTOR_LAYOUT_OPERATOR;
+#endif
 static lv_obj_t *parent_obj = NULL;
 static bool initialized = false;
 
@@ -61,10 +66,14 @@ void prospector_layouts_set_style(prospector_layout_t layout) {
     if (!initialized) return;
 
     /* Support Field, Operator, and Radii */
+#ifdef CONFIG_PROSPECTOR_DISPLAY_HEATMAP_ONLY
+    layout = PROSPECTOR_LAYOUT_HEATMAP;   /* the layout screen shows only the heatmap */
+#endif
     if (layout != PROSPECTOR_LAYOUT_FIELD &&
         layout != PROSPECTOR_LAYOUT_OPERATOR &&
         layout != PROSPECTOR_LAYOUT_RADII &&
-        layout != PROSPECTOR_LAYOUT_VSCODE) {
+        layout != PROSPECTOR_LAYOUT_VSCODE &&
+        layout != PROSPECTOR_LAYOUT_HEATMAP) {
         layout = PROSPECTOR_LAYOUT_OPERATOR;
     }
 
@@ -87,6 +96,9 @@ prospector_layout_t prospector_layouts_get_style(void) {
 
 void prospector_layouts_next(void) {
     if (!initialized) return;
+#ifdef CONFIG_PROSPECTOR_DISPLAY_HEATMAP_ONLY
+    return;
+#endif
 
     /* Cycle: Field -> Operator -> Radii -> Field */
     prospector_layout_t next;
@@ -101,6 +113,9 @@ void prospector_layouts_next(void) {
         next = PROSPECTOR_LAYOUT_VSCODE;
         break;
     case PROSPECTOR_LAYOUT_VSCODE:
+        next = PROSPECTOR_LAYOUT_HEATMAP;
+        break;
+    case PROSPECTOR_LAYOUT_HEATMAP:
     default:
         next = PROSPECTOR_LAYOUT_FIELD;
         break;
@@ -110,12 +125,15 @@ void prospector_layouts_next(void) {
 
 void prospector_layouts_prev(void) {
     if (!initialized) return;
+#ifdef CONFIG_PROSPECTOR_DISPLAY_HEATMAP_ONLY
+    return;
+#endif
 
     /* Cycle reverse: Field <- Operator <- Radii <- Field */
     prospector_layout_t prev;
     switch (current_layout) {
     case PROSPECTOR_LAYOUT_FIELD:
-        prev = PROSPECTOR_LAYOUT_VSCODE;
+        prev = PROSPECTOR_LAYOUT_HEATMAP;
         break;
     case PROSPECTOR_LAYOUT_OPERATOR:
         prev = PROSPECTOR_LAYOUT_FIELD;
@@ -124,8 +142,11 @@ void prospector_layouts_prev(void) {
         prev = PROSPECTOR_LAYOUT_OPERATOR;
         break;
     case PROSPECTOR_LAYOUT_VSCODE:
-    default:
         prev = PROSPECTOR_LAYOUT_RADII;
+        break;
+    case PROSPECTOR_LAYOUT_HEATMAP:
+    default:
+        prev = PROSPECTOR_LAYOUT_VSCODE;
         break;
     }
     prospector_layouts_set_style(prev);
@@ -158,6 +179,9 @@ void prospector_layouts_cycle_palette(void) {
     case PROSPECTOR_LAYOUT_VSCODE:
         vscode_layout_cycle_palette();
         break;
+    case PROSPECTOR_LAYOUT_HEATMAP:
+        heatmap_layout_cycle_palette();
+        break;
     default:
         break;
     }
@@ -175,6 +199,8 @@ const char *prospector_layouts_get_name(prospector_layout_t layout) {
         return "Radii";
     case PROSPECTOR_LAYOUT_VSCODE:
         return "VSCode";
+    case PROSPECTOR_LAYOUT_HEATMAP:
+        return "Heatmap";
     default:
         return "Unknown";
     }
@@ -196,6 +222,9 @@ static void destroy_current_layout(void) {
     case PROSPECTOR_LAYOUT_VSCODE:
         vscode_layout_destroy();
         break;
+    case PROSPECTOR_LAYOUT_HEATMAP:
+        heatmap_layout_destroy();
+        break;
     default:
         break;
     }
@@ -216,6 +245,9 @@ static void create_current_layout(void) {
         break;
     case PROSPECTOR_LAYOUT_VSCODE:
         vscode_layout_create(parent_obj);
+        break;
+    case PROSPECTOR_LAYOUT_HEATMAP:
+        heatmap_layout_create(parent_obj);
         break;
     default:
         /* Fallback to Operator */
@@ -281,6 +313,9 @@ static void update_current_layout(void) {
         break;
     case PROSPECTOR_LAYOUT_VSCODE:
         vscode_layout_update(&cached_data);
+        break;
+    case PROSPECTOR_LAYOUT_HEATMAP:
+        heatmap_layout_update(&cached_data);
         break;
     default:
         break;
