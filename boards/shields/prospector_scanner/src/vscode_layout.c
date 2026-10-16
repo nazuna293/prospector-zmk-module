@@ -389,9 +389,10 @@ static void wave_tick(lv_timer_t *t) {
     ARG_UNUSED(t);
 
     /* 1. key presses since the last tick kick bands.
-     * Soft limit: when 10 or more bands are already up, a new kick is smaller (60 %) and does
+     * Soft limit: when 11 or more bands are already up, a new kick is smaller (60 %) and does
      * not spill into the neighbours, so even a long burst of fast typing (WPM 120-140 is about
-     * 10-12 presses/s) never pins every bar at the top. */
+     * 10-12 presses/s) never pins every bar at the top. Below that limit the display is kept
+     * lively: about half of the bars are lit at WPM 140. */
     int n = (s_wave_acc > 4) ? 4 : (int)s_wave_acc;
     s_wave_acc = 0;
     for (int k = 0; k < n; k++) {
@@ -399,23 +400,29 @@ static void wave_tick(lv_timer_t *t) {
         for (int i = 0; i < VS_EQ_N; i++) {
             if (s_lvl[i] > 6) lit++;
         }
-        bool crowded = (lit >= 10);
+        bool crowded = (lit >= 11);
         uint32_t r = eq_rand();
         int b = (int)(r % VS_EQ_N);
-        int jump = 12 + (int)((r >> 8) % 15);          /* 12..26 px */
+        int jump = 14 + (int)((r >> 8) % 15);          /* 14..28 px */
         if (crowded) jump = (jump * 6) / 10;
         if (jump > VS_EQ_MAXH) jump = VS_EQ_MAXH;
         if (s_lvl[b] < jump) s_lvl[b] = (uint8_t)jump;
         if (!crowded) {
             /* The neighbours resonate unevenly: one side (chosen at random) rings loudly
-             * (60-85 % of the kick), the other only faintly (15-40 %). */
-            int loud = (jump * (60 + (int)((r >> 20) % 26))) / 100;
-            int soft = (jump * (15 + (int)((r >> 26) % 26))) / 100;
+             * (75-100 % of the kick), the other more faintly (30-55 %), and the loud side
+             * carries on to the next band (40 %). */
+            int loud = (jump * (75 + (int)((r >> 20) % 26))) / 100;
+            int soft = (jump * (30 + (int)((r >> 26) % 26))) / 100;
             bool left_loud = ((r >> 30) & 1) != 0;
             int left = left_loud ? loud : soft;
             int right = left_loud ? soft : loud;
+            int far_idx = left_loud ? b - 2 : b + 2;
+            int far_lvl = (jump * 40) / 100;
             if (b > 0 && s_lvl[b - 1] < left) s_lvl[b - 1] = (uint8_t)left;
             if (b < VS_EQ_N - 1 && s_lvl[b + 1] < right) s_lvl[b + 1] = (uint8_t)right;
+            if (far_idx >= 0 && far_idx < VS_EQ_N && s_lvl[far_idx] < far_lvl) {
+                s_lvl[far_idx] = (uint8_t)far_lvl;
+            }
         }
     }
 
@@ -431,7 +438,7 @@ static void wave_tick(lv_timer_t *t) {
             s_peak[i]--;
         }
         if (s_lvl[i] > 2) {
-            s_lvl[i] = (uint8_t)((s_lvl[i] * 17) / 20);   /* x0.85 per 50 ms tick */
+            s_lvl[i] = (uint8_t)((s_lvl[i] * 22) / 25);   /* x0.88 per 50 ms tick */
         } else {
             s_lvl[i] = 0;
         }
