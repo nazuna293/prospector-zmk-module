@@ -405,11 +405,17 @@ static void wave_tick(lv_timer_t *t) {
         int jump = 12 + (int)((r >> 8) % 15);          /* 12..26 px */
         if (crowded) jump = (jump * 6) / 10;
         if (jump > VS_EQ_MAXH) jump = VS_EQ_MAXH;
-        int side = crowded ? 0 : (jump * 2) / 3;
         if (s_lvl[b] < jump) s_lvl[b] = (uint8_t)jump;
-        if (side > 0) {
-            if (b > 0 && s_lvl[b - 1] < side) s_lvl[b - 1] = (uint8_t)side;
-            if (b < VS_EQ_N - 1 && s_lvl[b + 1] < side) s_lvl[b + 1] = (uint8_t)side;
+        if (!crowded) {
+            /* The neighbours resonate unevenly: one side (chosen at random) rings loudly
+             * (60-85 % of the kick), the other only faintly (15-40 %). */
+            int loud = (jump * (60 + (int)((r >> 20) % 26))) / 100;
+            int soft = (jump * (15 + (int)((r >> 26) % 26))) / 100;
+            bool left_loud = ((r >> 30) & 1) != 0;
+            int left = left_loud ? loud : soft;
+            int right = left_loud ? soft : loud;
+            if (b > 0 && s_lvl[b - 1] < left) s_lvl[b - 1] = (uint8_t)left;
+            if (b < VS_EQ_N - 1 && s_lvl[b + 1] < right) s_lvl[b + 1] = (uint8_t)right;
         }
     }
 
