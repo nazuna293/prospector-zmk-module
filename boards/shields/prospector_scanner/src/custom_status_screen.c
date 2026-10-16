@@ -945,6 +945,10 @@ lv_obj_t *zmk_display_status_screen(void) {
         if (prospector_layouts_get_style() != kconfig_layout) {
             prospector_layouts_set_style(kconfig_layout);
         }
+        /* Persist it: create_prospector_display_widgets() restores the NVS layout every time
+         * the screen is re-entered, so without this a round trip through another screen
+         * brings back the previously saved (default Operator) layout instead of this one. */
+        display_settings_set_layout((uint8_t)kconfig_layout);
 
         current_screen = SCREEN_PROSPECTOR_DISPLAY;
         LOG_INF("Default layout: %s (from Kconfig)",
