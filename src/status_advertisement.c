@@ -716,7 +716,7 @@ static void build_manufacturer_payload(void) {
     // Device role and peripheral batteries
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
     manufacturer_data.device_role = ZMK_DEVICE_ROLE_CENTRAL;
-    manufacturer_data.device_index = 0; // Central is always index 0
+    manufacturer_data.device_index = (uint8_t)key_press_count; // key-press counter (wraps); scanner uses the delta
 
     // Handle battery placement based on central side configuration
     // Default to "RIGHT" if not configured (backward compatibility)
@@ -791,7 +791,7 @@ static void build_manufacturer_payload(void) {
     return;
 #else
     manufacturer_data.device_role = ZMK_DEVICE_ROLE_STANDALONE;
-    manufacturer_data.device_index = 0;
+    manufacturer_data.device_index = (uint8_t)key_press_count; // key-press counter (wraps); scanner uses the delta
     memset(manufacturer_data.peripheral_battery, 0, 3);
 #endif
 

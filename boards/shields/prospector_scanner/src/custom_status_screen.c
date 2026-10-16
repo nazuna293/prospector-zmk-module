@@ -61,6 +61,18 @@ enum screen_state {
 };
 
 static enum screen_state current_screen = SCREEN_MAIN;
+
+/* True while the VSCode layout is the thing on screen: the main screen when
+ * CONFIG_PROSPECTOR_MAIN_VSCODE is set, or the VSCode layout on the layout screen. */
+static bool vscode_active(void) {
+#ifdef CONFIG_PROSPECTOR_MAIN_VSCODE
+    if (current_screen == SCREEN_MAIN) {
+        return true;
+    }
+#endif
+    return current_screen == SCREEN_PROSPECTOR_DISPLAY &&
+           prospector_layouts_get_style() == PROSPECTOR_LAYOUT_VSCODE;
+}
 static lv_obj_t *screen_obj = NULL;
 
 /* Transition protection flag - checked by work queues */
@@ -531,6 +543,14 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
         return;
     }
 
+    /* Typing wave: key presses counted since the last tick (VSCode layout only) */
+    {
+        uint8_t key_delta = scanner_take_key_delta();
+        if (key_delta > 0 && vscode_active()) {
+            vscode_layout_push_keys(key_delta);
+        }
+    }
+
     /* Check for pending display update */
     struct pending_display_data data;
     if (scanner_get_pending_update(&data)) {
@@ -551,8 +571,7 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
             active_battery_count = -1;
 
             /* VSCode layout (Prospector Display screen) shows its own waiting state */
-            if (current_screen == SCREEN_PROSPECTOR_DISPLAY &&
-                prospector_layouts_get_style() == PROSPECTOR_LAYOUT_VSCODE) {
+            if (vscode_active()) {
                 vscode_layout_set_waiting();
             }
 
@@ -581,6 +600,25 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
 #endif
         }
 
+#ifdef CONFIG_PROSPECTOR_MAIN_VSCODE
+        if (current_screen == SCREEN_MAIN) {
+            /* Main screen is the VSCode layout */
+            struct prospector_keyboard_data kb_data = {0};
+            kb_data.active_layer = data.layer;
+            kb_data.modifier_flags = data.modifiers;
+            kb_data.wpm_value = data.wpm;
+            kb_data.battery_level = data.bat[0];
+            kb_data.profile_slot = data.profile;
+            kb_data.usb_connected = data.usb_ready;
+            kb_data.ble_connected = data.ble_connected;
+            kb_data.ble_bonded = data.ble_bonded;
+            kb_data.has_dynamic_data = true;
+            strncpy(kb_data.keyboard_name, data.device_name, sizeof(kb_data.keyboard_name) - 1);
+            memcpy(kb_data.current_layer_name, data.layer_name, 4);
+            kb_data.current_layer_name[4] = 0;
+            vscode_layout_update(&kb_data);
+        } else
+#endif
         if (current_screen == SCREEN_PROSPECTOR_DISPLAY) {
             /* Route data to Prospector Display layouts */
             struct prospector_keyboard_data kb_data = {0};
@@ -632,8 +670,7 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
         rate_hz = (float)sig_rate_x100 / 100.0f;
 
         /* VSCode layout (Prospector Display screen) has its own signal strip */
-        if (current_screen == SCREEN_PROSPECTOR_DISPLAY &&
-            prospector_layouts_get_style() == PROSPECTOR_LAYOUT_VSCODE) {
+        if (vscode_active()) {
             vscode_layout_update_signal(sig_rssi, sig_rate_x100);
         }
 
@@ -663,8 +700,7 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
     int scanner_bat;
     if (scanner_get_pending_battery(&scanner_bat)) {
         display_update_scanner_battery(scanner_bat);
-        if (current_screen == SCREEN_PROSPECTOR_DISPLAY &&
-            prospector_layouts_get_style() == PROSPECTOR_LAYOUT_VSCODE) {
+        if (vscode_active()) {
             vscode_layout_update_scanner_battery(scanner_bat);
         }
     }
@@ -925,6 +961,15 @@ lv_obj_t *zmk_display_status_screen(void) {
 
     /* Save screen reference for screen transitions */
     screen_obj = screen;
+
+#ifdef CONFIG_PROSPECTOR_MAIN_VSCODE
+    /* Main screen = VSCode layout: swap out the YADS widgets created above
+     * (same steps as the default-layout path below). Navigation is unchanged. */
+    destroy_main_screen_widgets();
+    lv_obj_clean(screen);
+    lv_obj_set_style_bg_color(screen, lv_color_black(), 0);
+    vscode_layout_create(screen);
+#endif
 
     /* Check if Prospector Display layout is configured as default */
 #if CONFIG_PROSPECTOR_DEFAULT_LAYOUT > 0
@@ -1853,6 +1898,9 @@ void display_update_signal(int8_t rssi_val, float rate) {
 
 static void destroy_main_screen_widgets(void) {
     LOG_INF("Destroying main screen widgets...");
+#ifdef CONFIG_PROSPECTOR_MAIN_VSCODE
+    vscode_layout_destroy();  /* no-op when the VSCode layout is not on screen */
+#endif
 
     /* Cancel any running layer animations BEFORE deleting objects */
     for (int i = 0; i < 10; i++) {
@@ -1911,6 +1959,10 @@ static void destroy_main_screen_widgets(void) {
 static void create_main_screen_widgets(void) {
     if (!screen_obj) return;
     LOG_INF("Creating main screen widgets...");
+#ifdef CONFIG_PROSPECTOR_MAIN_VSCODE
+    vscode_layout_create(screen_obj);  /* redraws at once from the kept state */
+    return;
+#endif
 
     /* Recreate all main screen widgets using screen_obj */
     device_name_label = lv_label_create(screen_obj);
@@ -3639,6 +3691,12 @@ static void swipe_process_timer_cb(lv_timer_t *timer) {
             LOG_INF(">>> Prospector Display: cycle palette (double-tap)");
             prospector_layouts_cycle_palette();
         }
+#ifdef CONFIG_PROSPECTOR_MAIN_VSCODE
+        else if (current_screen == SCREEN_MAIN) {
+            LOG_INF(">>> Main (VSCode): cycle palette (double-tap)");
+            vscode_layout_cycle_palette();
+        }
+#endif
         break;
 
     default:

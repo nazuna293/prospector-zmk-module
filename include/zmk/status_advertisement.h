@@ -29,7 +29,7 @@ struct zmk_status_adv_data {
     uint8_t connection_count;      // Number of connected devices 0-5
     uint8_t status_flags;          // Status flags (bit field)
     uint8_t device_role;           // Device role (CENTRAL/PERIPHERAL/STANDALONE)
-    uint8_t device_index;          // Device index for split keyboards
+    uint8_t device_index;          // Key-press counter (wraps at 256). Count only, never which key. Scanner uses the delta between packets
     uint8_t peripheral_battery[3]; // Battery levels: [0]=Left keyboard, [1]=Right/Aux, [2]=Third device (0=N/A)
     char layer_name[4];            // Layer name (null-terminated, reduced from 6 to 4)
     uint8_t keyboard_id[4];        // Keyboard identifier

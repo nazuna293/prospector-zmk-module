@@ -23,6 +23,7 @@ void vscode_layout_update(const struct prospector_keyboard_data *d);
 void vscode_layout_update_signal(int8_t rssi, int32_t rate_x100);
 void vscode_layout_set_waiting(void);
 void vscode_layout_update_scanner_battery(int level);
+void vscode_layout_push_keys(uint8_t n);   /* key presses since the last call (typing wave) */
 void vscode_layout_destroy(void);
 
 /* Dark Modern <-> Light 2026 */

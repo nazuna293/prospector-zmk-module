@@ -267,6 +267,15 @@ config PROSPECTOR_DEFAULT_LAYOUT
       3 = Radii (circular wheel indicator)
       4 = VSCode (VS Code style tabs / status bar, YADS information layout)
 
+config PROSPECTOR_MAIN_VSCODE
+    bool "Use the VSCode layout as the main screen"
+    default n
+    depends on PROSPECTOR_MODE_SCANNER
+    help
+      Replace the YADS main screen (the hub of the swipe navigation) with the
+      VSCode layout. Swipe navigation, settings screens and the layout screen are
+      unchanged. Double-tap switches the palette on the main screen.
+
 config PROSPECTOR_LAYER_NAMES
     string "Layer names for the VSCode layout (comma separated)"
     default ""

@@ -345,6 +345,17 @@ static void schedule_process(void) {
 /* ========== Rate Calculation State ========== */
 
 static atomic_t adv_receive_count = ATOMIC_INIT(0);  /* Incremented by BT RX (atomic) */
+
+/* Key presses seen on the selected keyboard since the display last asked */
+static atomic_t key_delta_accum = ATOMIC_INIT(0);
+
+uint8_t scanner_take_key_delta(void) {
+    atomic_val_t v = atomic_set(&key_delta_accum, 0);
+    if (v > 255) {
+        v = 255;
+    }
+    return (uint8_t)v;
+}
 static uint32_t rate_last_calc_time = 0;
 
 #define RATE_HISTORY_SIZE 4
@@ -458,6 +469,18 @@ void scanner_process_incoming(void) {
                     selected_keyboard, index);
             selected_keyboard = index;
             high_priority_change = true;
+        }
+
+        /* Key-press counter (carried in device_index): presses since the previous packet.
+         * Only the selected keyboard drives the pulse display. */
+        if (index == selected_keyboard && keyboards[index].active) {
+            uint8_t kdelta = (uint8_t)(entry.data.device_index - keyboards[index].data.device_index);
+            if (kdelta > 20) {
+                kdelta = 20;  /* counter reset (keyboard reboot) or a long gap */
+            }
+            if (kdelta > 0) {
+                atomic_add(&key_delta_accum, kdelta);
+            }
         }
 
         /* Store the data */

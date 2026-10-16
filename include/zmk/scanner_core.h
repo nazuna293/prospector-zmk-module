@@ -79,6 +79,13 @@ bool scanner_is_signal_pending(void);
 bool scanner_get_pending_battery(int *level);
 
 /**
+ * @brief Key presses seen since the last call (selected keyboard), 0..255
+ *
+ * Derived from the key-press counter carried in the advertisement. Display thread only.
+ */
+uint8_t scanner_take_key_delta(void);
+
+/**
  * @brief Get last received keyboard firmware version
  */
 bool scanner_get_kb_version(uint8_t *major, uint8_t *minor, uint8_t *patch,

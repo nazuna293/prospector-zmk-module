@@ -25,6 +25,13 @@ LOG_MODULE_REGISTER(vscode_layout, CONFIG_ZMK_LOG_LEVEL);
 #define VS_MAX_TABS 8
 #define VS_BAR_W    165
 
+/* Typing activity wave: between the WPM block and the connection chip */
+#define VS_WAVE_N    24     /* bars */
+#define VS_WAVE_X    74     /* left edge */
+#define VS_WAVE_BASE 86     /* baseline y */
+#define VS_WAVE_STEP 5      /* px per level */
+#define VS_WAVE_MAX  6      /* levels */
+
 /* ========== Palettes ========== */
 
 typedef struct {
@@ -91,7 +98,7 @@ static struct {
     int32_t rate_x100;
     bool has_signal;
     int sbat;              /* scanner's own battery %, -1 = unknown */
-} st;
+} st = {.sbat = -1};   /* kept across destroy/create so the screen redraws at once */
 
 static lv_obj_t *s_parent;
 static lv_obj_t *s_root;
@@ -106,7 +113,11 @@ static lv_obj_t *s_bat_lbl, *s_bat_track, *s_bat_fill;
 static lv_obj_t *s_wait_cover, *s_wait_name, *s_wait_l1, *s_wait_l2;
 static lv_obj_t *s_band, *s_ch_lbl, *s_rx_lbl, *s_sig[5], *s_dbm_lbl, *s_hz_lbl;
 static uint8_t s_ntabs;
-static int s_sbat_cache = -1;   /* survives layout switches (the pending update is event driven) */
+static lv_obj_t *s_wave[VS_WAVE_N];
+static lv_timer_t *s_wave_timer;
+static uint8_t s_hist[VS_WAVE_N];   /* oldest first */
+static uint16_t s_wave_acc;         /* key presses since the last tick */
+static bool s_wave_dirty;           /* bars need a redraw */
 
 /* ========== Helpers ========== */
 
@@ -340,6 +351,42 @@ static void upd_waiting(void) {
     vs_show(s_wait_cover, !st.valid);
 }
 
+/* Typing activity wave: one sample per 100 ms tick. A sample is the number of key
+ * presses seen since the last tick (x2, capped), or the previous sample minus one,
+ * whichever is larger, so a keystroke leaves a short decaying bump. */
+static void draw_wave(void) {
+    const vs_palette_t *p = &PAL[cur_pal];
+    for (int i = 0; i < VS_WAVE_N; i++) {
+        if (!s_wave[i]) continue;
+        int h = 2 + s_hist[i] * VS_WAVE_STEP;
+        lv_obj_set_size(s_wave[i], 4, h);
+        lv_obj_set_pos(s_wave[i], VS_WAVE_X + i * 5, VS_WAVE_BASE - h);
+        lv_obj_set_style_bg_color(s_wave[i], lv_color_hex(s_hist[i] ? p->accent : p->disabled), LV_PART_MAIN);
+    }
+}
+
+static void wave_tick(lv_timer_t *t) {
+    ARG_UNUSED(t);
+    int lv = (int)s_wave_acc * 2;
+    s_wave_acc = 0;
+    int decay = (int)s_hist[VS_WAVE_N - 1] - 1;
+    if (lv < decay) lv = decay;
+    if (lv > VS_WAVE_MAX) lv = VS_WAVE_MAX;
+    if (lv < 0) lv = 0;
+
+    bool any = (lv > 0);
+    for (int i = 0; i < VS_WAVE_N - 1; i++) {
+        s_hist[i] = s_hist[i + 1];
+        if (s_hist[i]) any = true;
+    }
+    s_hist[VS_WAVE_N - 1] = (uint8_t)lv;
+
+    if (any || s_wave_dirty) {
+        draw_wave();
+        s_wave_dirty = any;   /* one last redraw once everything is flat */
+    }
+}
+
 static void refresh_all(void) {
     upd_name();
     upd_wpm();
@@ -351,6 +398,7 @@ static void refresh_all(void) {
     upd_signal();
     upd_scanner_battery();
     upd_waiting();
+    draw_wave();
 }
 
 /* ========== Create / destroy ========== */
@@ -371,6 +419,20 @@ static void clear_pointers(void) {
     for (int i = 0; i < 5; i++) {
         s_sig[i] = NULL;
     }
+    for (int i = 0; i < VS_WAVE_N; i++) {
+        s_wave[i] = NULL;
+    }
+}
+
+static void teardown(void) {
+    if (s_wave_timer) {
+        lv_timer_del(s_wave_timer);
+        s_wave_timer = NULL;
+    }
+    if (s_root != NULL) {
+        lv_obj_del(s_root);
+    }
+    clear_pointers();
 }
 
 static void build(lv_obj_t *parent) {
@@ -407,6 +469,12 @@ static void build(lv_obj_t *parent) {
     lv_obj_set_style_radius(s_conn_chip, 3, LV_PART_MAIN);
     s_conn_lbl = vs_label(s_conn_chip, &JetBrainsMono_Bold_12, 0xFFFFFF, "BLE 0",
                           0, 3, 62, LV_TEXT_ALIGN_CENTER);
+
+    /* Typing activity wave (new): bars scroll left every 100 ms */
+    for (int i = 0; i < VS_WAVE_N; i++) {
+        s_wave[i] = vs_rect(s_root, VS_WAVE_X + i * 5, VS_WAVE_BASE - 2, 4, 2, p->disabled);
+    }
+    s_wave_timer = lv_timer_create(wave_tick, 100, NULL);
 
     /* Layer: heading + editor tabs (YADS: y=82 heading, numbers below) */
     s_layer_t = vs_label(s_root, &JetBrainsMono_Regular_12, p->desc, "Layer", 90, 80, 100, LV_TEXT_ALIGN_CENTER);
@@ -472,8 +540,9 @@ lv_obj_t *vscode_layout_create(lv_obj_t *parent) {
         LOG_WRN("VSCode layout already created");
         return s_root;
     }
-    memset(&st, 0, sizeof(st));
-    st.sbat = s_sbat_cache;
+    memset(s_hist, 0, sizeof(s_hist));
+    s_wave_acc = 0;
+    s_wave_dirty = false;
     s_parent = parent;
     build(parent);
     refresh_all();
@@ -482,19 +551,14 @@ lv_obj_t *vscode_layout_create(lv_obj_t *parent) {
 }
 
 void vscode_layout_destroy(void) {
-    if (s_root != NULL) {
-        lv_obj_del(s_root);
-    }
-    clear_pointers();
+    teardown();
     s_parent = NULL;
-    memset(&st, 0, sizeof(st));
 }
 
 void vscode_layout_cycle_palette(void) {
     if (s_root == NULL || s_parent == NULL) return;
     cur_pal = (cur_pal + 1) % 2;
-    lv_obj_del(s_root);
-    clear_pointers();
+    teardown();
     build(s_parent);
     refresh_all();
     LOG_INF("VSCode palette: %s", PAL[cur_pal].name);
@@ -511,7 +575,7 @@ const char *vscode_layout_get_palette_name(void) {
 /* ========== Data entry points ========== */
 
 void vscode_layout_update(const struct prospector_keyboard_data *d) {
-    if (s_root == NULL || d == NULL) return;
+    if (d == NULL) return;
     /* The layout framework replays cached data right after create(); ignore it until real data arrives */
     if (!d->has_dynamic_data) return;
 
@@ -556,7 +620,6 @@ void vscode_layout_update(const struct prospector_keyboard_data *d) {
 }
 
 void vscode_layout_update_signal(int8_t rssi, int32_t rate_x100) {
-    if (s_root == NULL) return;
     st.rssi = rssi;
     st.rate_x100 = rate_x100;
     st.has_signal = true;
@@ -565,7 +628,6 @@ void vscode_layout_update_signal(int8_t rssi, int32_t rate_x100) {
 }
 
 void vscode_layout_set_waiting(void) {
-    if (s_root == NULL) return;
     st.valid = false;
     st.has_signal = false;
     upd_signal();
@@ -573,8 +635,15 @@ void vscode_layout_set_waiting(void) {
 }
 
 void vscode_layout_update_scanner_battery(int level) {
-    s_sbat_cache = level;
     st.sbat = level;
-    if (s_root == NULL) return;
     upd_scanner_battery();
+}
+
+/* Called every 100 ms with the key presses counted since the last call */
+void vscode_layout_push_keys(uint8_t n) {
+    if (s_wave_timer == NULL || n == 0) return;   /* not on screen */
+    s_wave_acc += n;
+    if (s_wave_acc > 100) {
+        s_wave_acc = 100;
+    }
 }
