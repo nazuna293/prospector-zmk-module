@@ -26,8 +26,10 @@ LOG_MODULE_REGISTER(vscode_layout, CONFIG_ZMK_LOG_LEVEL);
 #define VS_BAR_W    165
 
 /* Typing activity wave: between the WPM block and the connection chip */
-#define VS_WAVE_N    24     /* bars */
-#define VS_WAVE_X    74     /* left edge */
+#define VS_WAVE_N    30     /* bars */
+#define VS_WAVE_X    90     /* left edge (centred between the WPM block and the chip) */
+#define VS_WAVE_W    2      /* bar width */
+#define VS_WAVE_PITCH 3     /* bar width + 1px gap */
 #define VS_WAVE_BASE 76     /* baseline y (the "Layer" heading starts at y=80) */
 #define VS_WAVE_STEP 4      /* px per level (max height 2+6*4=26, top at y=50, below the name) */
 #define VS_WAVE_MAX  6      /* levels */
@@ -359,8 +361,8 @@ static void draw_wave(void) {
     for (int i = 0; i < VS_WAVE_N; i++) {
         if (!s_wave[i]) continue;
         int h = 2 + s_hist[i] * VS_WAVE_STEP;
-        lv_obj_set_size(s_wave[i], 4, h);
-        lv_obj_set_pos(s_wave[i], VS_WAVE_X + i * 5, VS_WAVE_BASE - h);
+        lv_obj_set_size(s_wave[i], VS_WAVE_W, h);
+        lv_obj_set_pos(s_wave[i], VS_WAVE_X + i * VS_WAVE_PITCH, VS_WAVE_BASE - h);
         lv_obj_set_style_bg_color(s_wave[i], lv_color_hex(s_hist[i] ? p->accent : p->disabled), LV_PART_MAIN);
     }
 }
@@ -472,7 +474,7 @@ static void build(lv_obj_t *parent) {
 
     /* Typing activity wave (new): bars scroll left every 100 ms */
     for (int i = 0; i < VS_WAVE_N; i++) {
-        s_wave[i] = vs_rect(s_root, VS_WAVE_X + i * 5, VS_WAVE_BASE - 2, 4, 2, p->disabled);
+        s_wave[i] = vs_rect(s_root, VS_WAVE_X + i * VS_WAVE_PITCH, VS_WAVE_BASE - 2, VS_WAVE_W, 2, p->disabled);
     }
     s_wave_timer = lv_timer_create(wave_tick, 100, NULL);
 
