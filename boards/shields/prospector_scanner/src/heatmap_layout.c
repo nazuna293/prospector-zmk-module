@@ -44,13 +44,13 @@ static const hm_palette_t PAL[2] = {
     {   /* Dark Modern */
         .bg = 0x1F1F1F,
         /* one hue: none -> dark red -> mid red -> red (VS Code editorError.foreground) */
-        .cell = {0x2B2B2B, 0x5A2323, 0x9E3434, 0xF14C4C},
+        .cell = {0x2B2B2B, 0x823A3A, 0xBF4444, 0xF14C4C},
         .text = 0x9D9D9D, .comment = 0x6A9955,
         .name = "Dark Modern",
     },
     {   /* Light 2026 */
         .bg = 0xFFFFFF,
-        .cell = {0xEFEFF2, 0xF2C9C9, 0xE07A7A, 0xCC2D2D},
+        .cell = {0xEFEFF2, 0xEDA5A5, 0xDE6666, 0xCC2D2D},
         .text = 0x606060, .comment = 0x6E7781,
         .name = "Light 2026",
     },
