@@ -142,7 +142,8 @@ ZMK_SUBSCRIPTION(prospector_peripheral_battery, zmk_peripheral_battery_state_cha
 
 // ===== Typing heatmap: accumulated key frequency (privacy-friendly) =====
 // Per key position press counts (8 fractional bits, so rarely used keys decay smoothly instead of
-// losing a whole press per step), decayed every 30 s (x0.97, half-life about 11 minutes),
+// losing a whole press per step), decayed every 30 s by HM_DECAY_PCT % (90 % = half-life about
+// 3 minutes, so roughly the last 10 minutes dominate; raise it to remember longer),
 // quantised to 4 levels relative to the busiest key (2 % / 12 % / 40 %: a long tail of rarely
 // used keys still shows up) and sent in 3 rotating slices.
 // Never carries which key was pressed just now.
@@ -150,6 +151,7 @@ ZMK_SUBSCRIPTION(prospector_peripheral_battery, zmk_peripheral_battery_state_cha
 #define HM_PER_SLICE  14
 #define HM_SLICES     3
 #define HM_DECAY_MS   30000
+#define HM_DECAY_PCT  90u              /* kept per decay step */
 #define HM_ONE        256u             /* one key press in fixed point */
 #define HM_COUNT_MAX  (60000u * HM_ONE)
 static uint32_t hm_count[HM_KEYS];
@@ -168,7 +170,7 @@ static void heatmap_pack(struct zmk_status_adv_data *md) {
     if (now - hm_last_decay >= HM_DECAY_MS) {
         hm_last_decay = now;
         for (int i = 0; i < HM_KEYS; i++) {
-            hm_count[i] = (uint32_t)(((uint64_t)hm_count[i] * 97u) / 100u);
+            hm_count[i] = (uint32_t)(((uint64_t)hm_count[i] * HM_DECAY_PCT) / 100u);
         }
     }
 

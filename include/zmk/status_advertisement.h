@@ -49,7 +49,7 @@ struct zmk_status_adv_data {
 #define ZMK_STATUS_FLAG_BLE_BONDED       (1 << 5)
 // Bit 6 reserved for future use
 // Bit 7: this packet carries one slice of the typing heatmap (accumulated key frequency, 4 levels,
-// decaying with a half-life of ~11 min; never which key was pressed just now). The slice is packed into
+// decaying every 30 s (x0.9, last ~10 min dominate); never which key was pressed just now). The slice is packed into
 // peripheral_battery[0..2] and connection_count (little endian, 32 bits):
 //   bits 0-27  : 14 keys x 2 bits (level 0-3), keys slice*14 .. slice*14+13
 //   bits 28-29 : slice id 0-2
