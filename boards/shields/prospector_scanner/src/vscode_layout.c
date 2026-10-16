@@ -28,8 +28,8 @@ LOG_MODULE_REGISTER(vscode_layout, CONFIG_ZMK_LOG_LEVEL);
 /* Typing activity wave: between the WPM block and the connection chip */
 #define VS_WAVE_N    24     /* bars */
 #define VS_WAVE_X    74     /* left edge */
-#define VS_WAVE_BASE 86     /* baseline y */
-#define VS_WAVE_STEP 5      /* px per level */
+#define VS_WAVE_BASE 76     /* baseline y (the "Layer" heading starts at y=80) */
+#define VS_WAVE_STEP 4      /* px per level (max height 2+6*4=26, top at y=50, below the name) */
 #define VS_WAVE_MAX  6      /* levels */
 
 /* ========== Palettes ========== */
