@@ -356,9 +356,10 @@ static atomic_t adv_receive_count = ATOMIC_INIT(0);  /* Incremented by BT RX (at
 /* Key presses seen on the selected keyboard since the display last asked */
 static atomic_t key_delta_accum = ATOMIC_INIT(0);
 
-/* Typing heatmap of the selected keyboard: 3 slices of 14 keys, 2 bits each (see
- * ZMK_STATUS_FLAG_HEATMAP in status_advertisement.h). Written under data_mutex by the
- * process work item, read under data_mutex by scanner_copy_heatmap(). */
+/* Typing heatmap of the selected keyboard: up to 4 slices of 14 keys, 2 bits each (see
+ * ZMK_STATUS_FLAG_HEATMAP in status_advertisement.h). Slices 0-2 are needed before it is shown;
+ * slice 3 (keys 42-55) only comes from keyboards with more keys, and from older firmware not at all.
+ * Written under data_mutex by the process work item, read under data_mutex by scanner_copy_heatmap(). */
 static uint8_t hm_levels[SCANNER_HEAT_KEYS];
 static uint8_t hm_slices_seen;   /* bit mask of slices received since the keyboard changed */
 static int hm_keyboard = -1;
@@ -366,7 +367,7 @@ static int hm_keyboard = -1;
 bool scanner_copy_heatmap(uint8_t *out, int n) {
     if (!mutex_initialized || !out || n <= 0) return false;
     if (k_mutex_lock(&data_mutex, K_MSEC(10)) != 0) return false;
-    bool ok = (hm_slices_seen == 0x7);
+    bool ok = ((hm_slices_seen & 0x7) == 0x7);
     if (ok) {
         int m = (n < SCANNER_HEAT_KEYS) ? n : SCANNER_HEAT_KEYS;
         memcpy(out, hm_levels, m);
@@ -521,15 +522,28 @@ void scanner_process_incoming(void) {
                          ((uint32_t)entry.data.peripheral_battery[2] << 16) |
                          ((uint32_t)entry.data.connection_count << 24);
             uint32_t slice = (w >> 28) & 0x3;
-            if (slice < 3) {
-                for (int k = 0; k < 14; k++) {
-                    int idx = (int)slice * 14 + k;
-                    if (idx < SCANNER_HEAT_KEYS) {
-                        hm_levels[idx] = (uint8_t)((w >> (2 * k)) & 0x3);
-                    }
+            for (int k = 0; k < 14; k++) {
+                int idx = (int)slice * 14 + k;
+                if (idx < SCANNER_HEAT_KEYS) {
+                    hm_levels[idx] = (uint8_t)((w >> (2 * k)) & 0x3);
                 }
-                hm_slices_seen |= (uint8_t)(1u << slice);
             }
+            hm_slices_seen |= (uint8_t)(1u << slice);
+        }
+
+        /* A heatmap packet carries the slice in the battery bytes: keep the batteries and the
+         * connection count from the previous packet (a split central sends the heatmap only in
+         * every other packet, the others carry the real batteries). The slice is decoded above. */
+        if (entry.data.status_flags & ZMK_STATUS_FLAG_HEATMAP) {
+            if (keyboards[index].active) {
+                memcpy(entry.data.peripheral_battery, keyboards[index].data.peripheral_battery,
+                       sizeof(entry.data.peripheral_battery));
+                entry.data.connection_count = keyboards[index].data.connection_count;
+            } else {
+                memset(entry.data.peripheral_battery, 0, sizeof(entry.data.peripheral_battery));
+                entry.data.connection_count = 0;
+            }
+            entry.data.status_flags &= (uint8_t)~ZMK_STATUS_FLAG_HEATMAP;
         }
 
         /* Store the data */

@@ -145,11 +145,11 @@ ZMK_SUBSCRIPTION(prospector_peripheral_battery, zmk_peripheral_battery_state_cha
 // losing a whole press per step), decayed every 30 s by HM_DECAY_PCT % (90 % = half-life about
 // 3 minutes, so roughly the last 10 minutes dominate; raise it to remember longer),
 // quantised to 4 levels relative to the busiest key (2 % / 12 % / 40 %: a long tail of rarely
-// used keys still shows up) and sent in 3 rotating slices.
+// used keys still shows up) and sent in 4 rotating slices (14 keys each, 56 positions).
 // Never carries which key was pressed just now.
-#define HM_KEYS       42
+#define HM_KEYS       56
 #define HM_PER_SLICE  14
-#define HM_SLICES     3
+#define HM_SLICES     4
 #define HM_DECAY_MS   30000
 #define HM_DECAY_PCT  90u              /* kept per decay step */
 #define HM_ONE        256u             /* one key press in fixed point */
@@ -164,7 +164,8 @@ static void heatmap_record(uint32_t position) {
     }
 }
 
-// Standalone keyboards only: fills peripheral_battery[0..2] and connection_count (unused there)
+// Fills peripheral_battery[0..2] and connection_count with one slice (those bytes are unused on a
+// standalone keyboard; a split central calls this only for every other packet)
 static void heatmap_pack(struct zmk_status_adv_data *md) {
     uint32_t now = k_uptime_get_32();
     if (now - hm_last_decay >= HM_DECAY_MS) {
@@ -952,6 +953,14 @@ static void build_manufacturer_payload(void) {
 
 #if !IS_ENABLED(CONFIG_ZMK_SPLIT)
     heatmap_pack(&manufacturer_data);
+#elif IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
+    // Split central: the battery bytes are in use, so carry a heatmap slice in every other packet.
+    // The scanner keeps the batteries from the previous packet (key presses of both halves arrive here).
+    static bool hm_turn;
+    hm_turn = !hm_turn;
+    if (hm_turn) {
+        heatmap_pack(&manufacturer_data);
+    }
 #endif
 
     const char *role_str =

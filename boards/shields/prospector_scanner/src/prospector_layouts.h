@@ -39,7 +39,7 @@ typedef enum {
 } prospector_layout_t;
 
 /* Key positions in the typing heatmap (same as SCANNER_HEAT_KEYS in zmk/scanner_core.h) */
-#define PROSPECTOR_HEAT_KEYS 42
+#define PROSPECTOR_HEAT_KEYS 56
 
 /**
  * @brief Keyboard data for display (from Periodic ADV)

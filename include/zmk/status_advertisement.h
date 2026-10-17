@@ -52,8 +52,9 @@ struct zmk_status_adv_data {
 // decaying every 30 s (x0.9, last ~10 min dominate); never which key was pressed just now). The slice is packed into
 // peripheral_battery[0..2] and connection_count (little endian, 32 bits):
 //   bits 0-27  : 14 keys x 2 bits (level 0-3), keys slice*14 .. slice*14+13
-//   bits 28-29 : slice id 0-2
-// Only set by a standalone (non-split) keyboard, where those bytes are otherwise unused.
+//   bits 28-29 : slice id 0-3 (slice 3 = keys 42-55, for keyboards with more keys)
+// A standalone keyboard sets it in every packet (those bytes are otherwise unused there);
+// a split central only in every other packet, since the other packets carry the batteries.
 #define ZMK_STATUS_FLAG_HEATMAP          (1 << 7)
 
 /**

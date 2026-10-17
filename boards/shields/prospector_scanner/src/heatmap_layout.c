@@ -1,9 +1,9 @@
 /*
  * Heatmap layout for Scanner Mode - see heatmap_layout.h
  *
- * Key geometry: layout_b of the Enigma_01_Pro shield (Enigma_01_Pro_layouts.dtsi),
+ * Key geometry per keyboard (chosen by the start of the keyboard name, see GEOMS):
  * entries in key position order, units of 1/100 key (x, y, w, h).
- * If the physical layout changes, regenerate KEYS from that file.
+ * If a physical layout changes, regenerate its table from the keyboard's layouts file.
  */
 #include "heatmap_layout.h"
 #include "fonts.h"
@@ -15,12 +15,14 @@ LOG_MODULE_REGISTER(heatmap_layout, CONFIG_ZMK_LOG_LEVEL);
 
 #define HM_W        280
 #define HM_H        240
-#define HM_NKEYS    41      /* keys in layout_b (heat levels exist for PROSPECTOR_HEAT_KEYS positions) */
-#define HM_UNIT     24      /* px per key unit: 10 units = 240 px */
-#define HM_X0       20
-#define HM_Y0       62
+#define HM_MAX_KEYS 48      /* largest table below (heat levels exist for PROSPECTOR_HEAT_KEYS positions) */
+#define HM_X0       20      /* left edge of the captions */
+#define HM_AREA_Y   62      /* key area: 240 x 120 px from (20, 62), keys scaled to fit */
+#define HM_AREA_W   240
+#define HM_AREA_H   120
 
-static const uint16_t KEYS[HM_NKEYS][4] = {
+/* Enigma_01_Pro: layout_b of Enigma_01_Pro_layouts.dtsi (41 keys) */
+static const uint16_t KEYS_ENIGMA[][4] = {
     {100,0,100,100}, {200,0,100,100},
     {0,100,100,100}, {100,100,100,100}, {200,100,100,100}, {300,100,100,100}, {400,100,100,100},
     {500,100,100,100}, {600,100,100,100}, {700,100,100,100}, {800,100,100,100}, {900,100,100,100},
@@ -31,6 +33,54 @@ static const uint16_t KEYS[HM_NKEYS][4] = {
     {0,400,100,100}, {100,400,100,100}, {200,400,100,100}, {300,400,150,100}, {450,400,100,100},
     {550,400,150,100}, {700,400,100,100}, {800,400,100,100}, {900,400,100,100},
 };
+
+/* NaZZ enc-tb: layout_enc_tb of NaZZ-layouts.dtsi (43 keys) */
+static const uint16_t KEYS_NAZZ_ENC_TB[][4] = {
+    {0,0,100,100}, {100,0,100,100}, {200,0,100,100}, {300,0,100,100}, {400,0,100,100}, {800,0,100,100}, {900,0,100,100}, {1000,0,100,100}, {1100,0,100,100}, {1200,0,100,100},
+    {0,100,100,100}, {100,100,100,100}, {200,100,100,100}, {300,100,100,100}, {400,100,100,100}, {500,100,100,100}, {700,100,100,100}, {800,100,100,100}, {900,100,100,100}, {1000,100,100,100}, {1100,100,100,100}, {1200,100,100,100},
+    {0,200,100,100}, {100,200,100,100}, {200,200,100,100}, {300,200,100,100}, {400,200,100,100}, {500,200,100,100}, {700,200,100,100}, {800,200,100,100}, {900,200,100,100}, {1000,200,100,100}, {1100,200,100,100}, {1200,200,100,100},
+    {0,300,100,100}, {100,300,100,100}, {200,300,100,100}, {300,300,100,100}, {400,300,100,100}, {500,300,100,100}, {700,300,100,100}, {800,300,100,100}, {1200,300,100,100},
+};
+/* NaZZ tb-enc: layout_tb_enc of NaZZ-layouts.dtsi (43 keys) */
+static const uint16_t KEYS_NAZZ_TB_ENC[][4] = {
+    {0,0,100,100}, {100,0,100,100}, {200,0,100,100}, {300,0,100,100}, {400,0,100,100}, {800,0,100,100}, {900,0,100,100}, {1000,0,100,100}, {1100,0,100,100}, {1200,0,100,100},
+    {0,100,100,100}, {100,100,100,100}, {200,100,100,100}, {300,100,100,100}, {400,100,100,100}, {500,100,100,100}, {700,100,100,100}, {800,100,100,100}, {900,100,100,100}, {1000,100,100,100}, {1100,100,100,100}, {1200,100,100,100},
+    {0,200,100,100}, {100,200,100,100}, {200,200,100,100}, {300,200,100,100}, {400,200,100,100}, {500,200,100,100}, {700,200,100,100}, {800,200,100,100}, {900,200,100,100}, {1000,200,100,100}, {1100,200,100,100}, {1200,200,100,100},
+    {0,300,100,100}, {400,300,100,100}, {500,300,100,100}, {700,300,100,100}, {800,300,100,100}, {900,300,100,100}, {1000,300,100,100}, {1100,300,100,100}, {1200,300,100,100},
+};
+/* NaZZ tb-tb: layout_tb_tb of NaZZ-layouts.dtsi (40 keys) */
+static const uint16_t KEYS_NAZZ_TB_TB[][4] = {
+    {0,0,100,100}, {100,0,100,100}, {200,0,100,100}, {300,0,100,100}, {400,0,100,100}, {800,0,100,100}, {900,0,100,100}, {1000,0,100,100}, {1100,0,100,100}, {1200,0,100,100},
+    {0,100,100,100}, {100,100,100,100}, {200,100,100,100}, {300,100,100,100}, {400,100,100,100}, {500,100,100,100}, {700,100,100,100}, {800,100,100,100}, {900,100,100,100}, {1000,100,100,100}, {1100,100,100,100}, {1200,100,100,100},
+    {0,200,100,100}, {100,200,100,100}, {200,200,100,100}, {300,200,100,100}, {400,200,100,100}, {500,200,100,100}, {700,200,100,100}, {800,200,100,100}, {900,200,100,100}, {1000,200,100,100}, {1100,200,100,100}, {1200,200,100,100},
+    {0,300,100,100}, {400,300,100,100}, {500,300,100,100}, {700,300,100,100}, {800,300,100,100}, {1200,300,100,100},
+};
+
+#define HM_N(t) ((int)(sizeof(t) / sizeof(t[0])))
+
+typedef struct {
+    const char *prefix;          /* start of the keyboard name ("" = any keyboard) */
+    const uint16_t (*keys)[4];
+    int n;
+} hm_geom_t;
+
+/* NaZZ's Bluetooth name is "NaZZ <構成>"; the last entry is the default */
+static const hm_geom_t GEOMS[] = {
+    {"NaZZ enc-tb", KEYS_NAZZ_ENC_TB, HM_N(KEYS_NAZZ_ENC_TB)},
+    {"NaZZ tb-enc", KEYS_NAZZ_TB_ENC, HM_N(KEYS_NAZZ_TB_ENC)},
+    {"NaZZ tb-tb", KEYS_NAZZ_TB_TB, HM_N(KEYS_NAZZ_TB_TB)},
+    {"", KEYS_ENIGMA, HM_N(KEYS_ENIGMA)},
+};
+
+static const hm_geom_t *geom_for(const char *name) {
+    for (int i = 0; i < HM_N(GEOMS); i++) {
+        size_t len = strlen(GEOMS[i].prefix);
+        if (len == 0 || strncmp(name, GEOMS[i].prefix, len) == 0) {
+            return &GEOMS[i];
+        }
+    }
+    return &GEOMS[HM_N(GEOMS) - 1];
+}
 
 typedef struct {
     uint32_t bg;
@@ -61,10 +111,11 @@ static uint8_t cur_pal = 0;
 
 static lv_obj_t *s_parent;
 static lv_obj_t *s_root;
-static lv_obj_t *s_key[HM_NKEYS];
+static const hm_geom_t *s_geom = &GEOMS[HM_N(GEOMS) - 1];  /* key geometry of the shown keyboard */
+static lv_obj_t *s_key[HM_MAX_KEYS];
 static lv_obj_t *s_note;
 static lv_obj_t *s_map;   /* keys + legend; shown only while a keyboard sends heatmap data */
-static uint8_t s_shown[HM_NKEYS];            /* level currently drawn per key */
+static uint8_t s_shown[HM_MAX_KEYS];         /* level currently drawn per key */
 static uint8_t s_heat[PROSPECTOR_HEAT_KEYS]; /* latest levels */
 static bool s_heat_valid;
 
@@ -95,9 +146,9 @@ static lv_obj_t *hm_label(lv_obj_t *parent, const lv_font_t *font, uint32_t colo
 
 static void draw_levels(bool force) {
     const hm_palette_t *p = &PAL[cur_pal];
-    for (int i = 0; i < HM_NKEYS; i++) {
+    for (int i = 0; i < s_geom->n && i < HM_MAX_KEYS; i++) {
         if (!s_key[i]) continue;
-        uint8_t lv = s_heat_valid ? (s_heat[i] & 0x3) : 0;
+        uint8_t lv = (s_heat_valid && i < PROSPECTOR_HEAT_KEYS) ? (s_heat[i] & 0x3) : 0;
         if (!force && lv == s_shown[i]) continue;
         s_shown[i] = lv;
         lv_obj_set_style_bg_color(s_key[i], lv_color_hex(p->cell[lv]), LV_PART_MAIN);
@@ -143,11 +194,23 @@ static void build(lv_obj_t *parent) {
     lv_obj_set_style_pad_all(s_map, 0, LV_PART_MAIN);
     lv_obj_clear_flag(s_map, LV_OBJ_FLAG_SCROLLABLE);
 
-    for (int i = 0; i < HM_NKEYS; i++) {
-        int x = HM_X0 + (KEYS[i][0] * HM_UNIT) / 100;
-        int y = HM_Y0 + (KEYS[i][1] * HM_UNIT) / 100;
-        int w = (KEYS[i][2] * HM_UNIT) / 100 - 2;
-        int h = (KEYS[i][3] * HM_UNIT) / 100 - 2;
+    /* Scale the keys to fit the key area (Enigma: 10 x 5 keys -> 24 px, NaZZ: 13 x 4 -> 18 px) */
+    int cols = 0, rows = 0;
+    for (int i = 0; i < s_geom->n; i++) {
+        int r = s_geom->keys[i][0] + s_geom->keys[i][2];
+        int b = s_geom->keys[i][1] + s_geom->keys[i][3];
+        if (r > cols) cols = r;
+        if (b > rows) rows = b;
+    }
+    int unit = (cols > 0 && rows > 0) ? MIN(HM_AREA_W * 100 / cols, HM_AREA_H * 100 / rows) : 24;
+    int x0 = (HM_W - (cols * unit) / 100) / 2;
+    int y0 = HM_AREA_Y + (HM_AREA_H - (rows * unit) / 100) / 2;
+
+    for (int i = 0; i < s_geom->n && i < HM_MAX_KEYS; i++) {
+        int x = x0 + (s_geom->keys[i][0] * unit) / 100;
+        int y = y0 + (s_geom->keys[i][1] * unit) / 100;
+        int w = (s_geom->keys[i][2] * unit) / 100 - 2;
+        int h = (s_geom->keys[i][3] * unit) / 100 - 2;
         s_key[i] = hm_rect(s_map, x, y, w, h, p->cell[0], 3);
         s_shown[i] = 0;
     }
@@ -181,7 +244,7 @@ static void teardown(void) {
     s_root = NULL;
     s_note = NULL;
     s_map = NULL;
-    for (int i = 0; i < HM_NKEYS; i++) {
+    for (int i = 0; i < HM_MAX_KEYS; i++) {
         s_key[i] = NULL;
     }
 }
@@ -201,6 +264,15 @@ void heatmap_layout_cycle_palette(void) {
 
 void heatmap_layout_update(const struct prospector_keyboard_data *d) {
     if (d == NULL) return;
+    const hm_geom_t *g = geom_for(d->keyboard_name);
+    if (g != s_geom) {
+        s_geom = g;
+        if (s_root != NULL && s_parent != NULL) {  /* another keyboard: redraw its key layout */
+            teardown();
+            build(s_parent);
+            draw_levels(true);
+        }
+    }
     s_heat_valid = d->heat_valid;
     if (d->heat_valid) {
         memcpy(s_heat, d->heat, sizeof(s_heat));
