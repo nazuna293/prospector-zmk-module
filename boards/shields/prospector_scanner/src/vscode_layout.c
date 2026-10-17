@@ -172,15 +172,48 @@ static uint8_t vs_rssi_bars(int8_t r) {
     return 0;
 }
 
-/* Layer name for the label under the tabs: the scanner-side table
- * (CONFIG_PROSPECTOR_LAYER_NAMES, comma separated) wins; otherwise the 4-char
- * name that arrived in the advertisement. */
-static const char *layer_label(int idx, const char *fallback, char *buf, size_t n) {
+/* The scanner-side name list for the keyboard (CONFIG_PROSPECTOR_LAYER_NAMES).
+ * Lists are separated by ';'. "Prefix:Name,Name,..." is used for keyboards whose
+ * name starts with Prefix; a list without "Prefix:" applies to any keyboard (this
+ * is also the old single-list format). Returns NULL if nothing applies. */
+static const char *layer_names_for(const char *kb, size_t *out_len) {
     const char *s = CONFIG_PROSPECTOR_LAYER_NAMES;
-    int cur = 0;
+    const char *any = NULL;
+    size_t any_len = 0;
     while (*s) {
-        const char *e = strchr(s, ',');
-        size_t len = e ? (size_t)(e - s) : strlen(s);
+        const char *end = strchr(s, ';');
+        size_t len = end ? (size_t)(end - s) : strlen(s);
+        const char *colon = memchr(s, ':', len);
+        if (colon == NULL) {
+            if (any == NULL) {
+                any = s;
+                any_len = len;
+            }
+        } else {
+            size_t plen = (size_t)(colon - s);
+            if (plen > 0 && strncmp(kb, s, plen) == 0) {
+                *out_len = len - plen - 1;
+                return colon + 1;
+            }
+        }
+        if (!end) break;
+        s = end + 1;
+    }
+    *out_len = any_len;
+    return any;
+}
+
+/* Layer name for the label under the tabs: the scanner-side list for this
+ * keyboard wins; otherwise the 4-char name that arrived in the advertisement. */
+static const char *layer_label(int idx, const char *fallback, char *buf, size_t n) {
+    size_t total;
+    const char *s = layer_names_for(st.name, &total);
+    if (s == NULL) return fallback;
+    const char *stop = s + total;
+    int cur = 0;
+    while (s < stop) {
+        const char *e = memchr(s, ',', (size_t)(stop - s));
+        size_t len = e ? (size_t)(e - s) : (size_t)(stop - s);
         if (cur == idx) {
             if (len == 0) break;
             if (len >= n) len = n - 1;
@@ -659,6 +692,7 @@ void vscode_layout_update(const struct prospector_keyboard_data *d) {
         strncpy(st.name, d->keyboard_name, sizeof(st.name) - 1);
         st.name[sizeof(st.name) - 1] = '\0';
         upd_name();
+        upd_layer();  // the layer name list depends on the keyboard
     }
     if (first || st.wpm != d->wpm_value) {
         st.wpm = d->wpm_value;
