@@ -101,6 +101,8 @@ static struct {
     int32_t rate_x100;
     bool has_signal;
     int sbat;              /* scanner's own battery %, -1 = unknown */
+    uint32_t total;        /* key presses seen since boot (this session) */
+    uint8_t best_wpm;      /* highest WPM seen since boot */
 } st = {.sbat = -1};   /* kept across destroy/create so the screen redraws at once */
 
 static lv_obj_t *s_parent;
@@ -125,6 +127,23 @@ static uint8_t s_hold[VS_EQ_N];     /* ticks the cap stays before it falls */
 static uint16_t s_wave_acc;         /* key presses since the last tick */
 static bool s_wave_dirty;           /* bars need a redraw */
 static uint32_t s_rng = 2463534242u;
+
+/* Modifier keycaps linger after release; the spot below them shows layer changes, key-count
+ * milestones and an idle comment line. */
+#define VS_MOD_LINGER_MS   800
+#define VS_TOAST_LAYER_MS  1500
+#define VS_TOAST_MILE_MS   2500
+#define VS_IDLE_PHASE_MS   5000
+static uint32_t s_mod_until[4];     /* tick when a released modifier's keycap disappears (0 = none) */
+static bool s_mod_prev[4];          /* modifier was held at the last update */
+static int s_mod_n;                 /* keycaps currently drawn */
+static lv_obj_t *s_info;
+static uint8_t s_info_kind = 0xFF;  /* 0 hidden, 1 layer toast, 2 milestone toast, 3 idle line */
+static char s_info_txt[32];
+static char s_toast[24];
+static uint8_t s_toast_kind;        /* 1 layer, 2 milestone */
+static uint32_t s_toast_t0;
+static uint32_t s_toast_ms;
 
 /* ========== Helpers ========== */
 
@@ -283,28 +302,43 @@ static void upd_layer(void) {
     }
 }
 
-/* Modifiers: keybinding labels, shown only while pressed (as in YADS). */
+/* Modifiers: keybinding labels. Shown while pressed and, dimmed, for a moment after release. */
 static void upd_mods(void) {
     const vs_palette_t *p = &PAL[cur_pal];
-    bool on[4] = {
+    bool held[4] = {
         (st.mods & 0x11) != 0,  /* Ctrl */
         (st.mods & 0x22) != 0,  /* Shift */
         (st.mods & 0x44) != 0,  /* Alt */
         (st.mods & 0x88) != 0,  /* Win/GUI */
     };
-    const int cw = 58, gap = 6;
+    bool on[4], dim[4];
+    uint32_t now = lv_tick_get();
     int n = 0;
     for (int i = 0; i < 4; i++) {
+        if (s_mod_prev[i] && !held[i]) {
+            s_mod_until[i] = now + VS_MOD_LINGER_MS;
+            if (s_mod_until[i] == 0) s_mod_until[i] = 1;
+        }
+        if (held[i]) s_mod_until[i] = 0;
+        s_mod_prev[i] = held[i];
+        bool linger = !held[i] && s_mod_until[i] != 0 && (int32_t)(now - s_mod_until[i]) < 0;
+        if (!held[i] && !linger) s_mod_until[i] = 0;
+        on[i] = held[i] || linger;
+        dim[i] = linger;
         if (on[i]) n++;
     }
+    s_mod_n = n;
+    const int cw = 58, gap = 6;
     int x = (VS_W - (n * cw + (n > 0 ? (n - 1) * gap : 0))) / 2;
     for (int i = 0; i < 4; i++) {
         if (!s_mod[i]) continue;
         if (on[i]) {
             lv_obj_set_pos(s_mod[i], x, 144);
-            lv_obj_set_style_bg_color(s_mod[i], lv_color_hex(p->sel), LV_PART_MAIN);
-            lv_obj_set_style_border_color(s_mod[i], lv_color_hex(p->accent), LV_PART_MAIN);
-            lv_obj_set_style_text_color(s_mod_lbl[i], lv_color_hex(p->on_sel), LV_PART_MAIN);
+            lv_obj_set_style_bg_color(s_mod[i], lv_color_hex(dim[i] ? p->chrome : p->sel), LV_PART_MAIN);
+            lv_obj_set_style_border_color(s_mod[i], lv_color_hex(dim[i] ? p->disabled : p->accent),
+                                          LV_PART_MAIN);
+            lv_obj_set_style_text_color(s_mod_lbl[i], lv_color_hex(dim[i] ? p->desc : p->on_sel),
+                                        LV_PART_MAIN);
             x += cw + gap;
             vs_show(s_mod[i], true);
         } else {
@@ -422,6 +456,73 @@ static void draw_eq(void) {
     }
 }
 
+/* 1234 -> "1,234" */
+static void fmt_num(char *out, size_t n, uint32_t v) {
+    if (v >= 1000000) {
+        snprintf(out, n, "%u,%03u,%03u", (unsigned)(v / 1000000), (unsigned)((v / 1000) % 1000),
+                 (unsigned)(v % 1000));
+    } else if (v >= 1000) {
+        snprintf(out, n, "%u,%03u", (unsigned)(v / 1000), (unsigned)(v % 1000));
+    } else {
+        snprintf(out, n, "%u", (unsigned)v);
+    }
+}
+
+static void start_toast(uint8_t kind, const char *text, uint32_t ms) {
+    strncpy(s_toast, text, sizeof(s_toast) - 1);
+    s_toast[sizeof(s_toast) - 1] = 0;
+    s_toast_kind = kind;
+    s_toast_t0 = lv_tick_get();
+    s_toast_ms = ms;
+}
+
+/* The spot below the layer tabs (where modifier keycaps appear). Priority: keycaps > toast > idle
+ * comment line. Called every 50 ms; touches LVGL only when something changes. */
+static void upd_info(void) {
+    if (!s_info) return;
+    const vs_palette_t *p = &PAL[cur_pal];
+    uint32_t now = lv_tick_get();
+    uint8_t kind = 0;
+    char txt[32] = "";
+
+    if (st.valid && s_mod_n == 0) {
+        if (s_toast_kind != 0 && (now - s_toast_t0) < s_toast_ms) {
+            kind = s_toast_kind;
+            snprintf(txt, sizeof(txt), "%s", s_toast);
+        } else if (st.total > 0) {
+            char num[16];
+            bool second = ((now / VS_IDLE_PHASE_MS) & 1) != 0 && st.best_wpm > 0;
+            kind = 3;
+            if (second) {
+                snprintf(txt, sizeof(txt), "// best %u wpm", (unsigned)st.best_wpm);
+            } else {
+                fmt_num(num, sizeof(num), st.total);
+                snprintf(txt, sizeof(txt), "// %s keys", num);
+            }
+        }
+    }
+
+    if (kind != s_info_kind) {
+        s_info_kind = kind;
+        if (kind == 3) {
+            lv_obj_set_style_text_font(s_info, &JetBrainsMono_Regular_12, LV_PART_MAIN);
+            lv_obj_set_style_text_color(s_info, lv_color_hex(p->comment), LV_PART_MAIN);
+            lv_obj_set_y(s_info, 154);
+        } else if (kind != 0) {
+            lv_obj_set_style_text_font(s_info, &JetBrainsMono_Bold_16, LV_PART_MAIN);
+            lv_obj_set_style_text_color(s_info, lv_color_hex(kind == 1 ? p->fg : p->number), LV_PART_MAIN);
+            lv_obj_set_y(s_info, 152);
+        }
+        vs_show(s_info, kind != 0);
+        s_info_txt[0] = 0;
+    }
+    if (kind != 0 && strcmp(txt, s_info_txt) != 0) {
+        strncpy(s_info_txt, txt, sizeof(s_info_txt) - 1);
+        s_info_txt[sizeof(s_info_txt) - 1] = 0;
+        lv_label_set_text(s_info, txt);
+    }
+}
+
 static void wave_tick(lv_timer_t *t) {
     ARG_UNUSED(t);
 
@@ -486,6 +587,16 @@ static void wave_tick(lv_timer_t *t) {
         draw_eq();
         s_wave_dirty = any;   /* one last redraw once everything is flat */
     }
+
+    /* 3. released modifier keycaps expire; refresh the info line */
+    uint32_t now = lv_tick_get();
+    for (int i = 0; i < 4; i++) {
+        if (s_mod_until[i] != 0 && (int32_t)(now - s_mod_until[i]) >= 0) {
+            upd_mods();
+            break;
+        }
+    }
+    upd_info();
 }
 
 static void refresh_all(void) {
@@ -500,6 +611,7 @@ static void refresh_all(void) {
     upd_scanner_battery();
     upd_waiting();
     draw_eq();
+    upd_info();
 }
 
 /* ========== Create / destroy ========== */
@@ -507,6 +619,7 @@ static void refresh_all(void) {
 static void clear_pointers(void) {
     s_root = NULL;
     s_sbat_lbl = NULL;
+    s_info = NULL;
     s_name = s_wpm_t = s_wpm_v = s_conn_chip = s_conn_lbl = s_layer_t = s_layer_name = NULL;
     for (int i = 0; i < VS_MAX_TABS; i++) {
         s_tab[i] = s_tab_lbl[i] = s_tab_line[i] = NULL;
@@ -609,6 +722,12 @@ static void build(lv_obj_t *parent) {
         vs_show(s_mod[i], false);
     }
 
+    /* Info line in the same spot (layer toast / key-count milestone / idle comment). Hidden at first. */
+    s_info = vs_label(s_root, &JetBrainsMono_Regular_12, p->comment, "", 20, 154, 240, LV_TEXT_ALIGN_CENTER);
+    vs_show(s_info, false);
+    s_info_kind = 0xFF;
+    s_info_txt[0] = 0;
+
     /* Battery: % above a full-width bar (YADS: y=-42 / -33 from the bottom) */
     s_bat_lbl = vs_label(s_root, &JetBrainsMono_Bold_16, p->accent, "--", 90, 181, 100, LV_TEXT_ALIGN_CENTER);
     s_bat_track = vs_rect(s_root, (VS_W - VS_BAR_W) / 2, 203, VS_BAR_W, 6, p->chrome);
@@ -696,6 +815,7 @@ void vscode_layout_update(const struct prospector_keyboard_data *d) {
     }
     if (first || st.wpm != d->wpm_value) {
         st.wpm = d->wpm_value;
+        if (st.wpm > st.best_wpm) st.best_wpm = st.wpm;
         upd_wpm();
     }
     if (first || st.usb != d->usb_connected || st.ble_conn != d->ble_connected ||
@@ -711,6 +831,11 @@ void vscode_layout_update(const struct prospector_keyboard_data *d) {
         strncpy(st.lname, d->current_layer_name, sizeof(st.lname) - 1);
         st.lname[sizeof(st.lname) - 1] = '\0';
         upd_layer();
+        if (!first) {
+            char nb[20], tb[24];
+            snprintf(tb, sizeof(tb), "-> %s", layer_label(st.layer, st.lname, nb, sizeof(nb)));
+            start_toast(1, tb, VS_TOAST_LAYER_MS);
+        }
     }
     if (first || st.mods != d->modifier_flags) {
         st.mods = d->modifier_flags;
@@ -748,7 +873,19 @@ void vscode_layout_update_scanner_battery(int level) {
 
 /* Called every 100 ms with the key presses counted since the last call */
 void vscode_layout_push_keys(uint8_t n) {
-    if (s_wave_timer == NULL || n == 0) return;   /* not on screen */
+    if (n == 0) return;
+    uint32_t before = st.total;
+    st.total += n;
+    /* milestones: 100, 500, then every 1000 */
+    if ((before < 100 && st.total >= 100) || (before < 500 && st.total >= 500) ||
+        (before / 1000) != (st.total / 1000)) {
+        uint32_t m = st.total >= 1000 ? (st.total / 1000) * 1000 : (st.total >= 500 ? 500 : 100);
+        char num[16], tb[24];
+        fmt_num(num, sizeof(num), m);
+        snprintf(tb, sizeof(tb), "// %s keys", num);
+        start_toast(2, tb, VS_TOAST_MILE_MS);
+    }
+    if (s_wave_timer == NULL) return;   /* not on screen */
     s_wave_acc += n;
     if (s_wave_acc > 100) {
         s_wave_acc = 100;
