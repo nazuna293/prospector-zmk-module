@@ -128,17 +128,17 @@ static uint16_t s_wave_acc;         /* key presses since the last tick */
 static bool s_wave_dirty;           /* bars need a redraw */
 static uint32_t s_rng = 2463534242u;
 
-/* Modifier keycaps linger after release; the spot below them shows layer changes, key-count
+/* Modifier keycaps linger after release; the spot below them shows key-count
  * milestones and an idle comment line. */
 #define VS_MOD_LINGER_MS   800
-#define VS_TOAST_LAYER_MS  1500
 #define VS_TOAST_MILE_MS   2500
-#define VS_IDLE_PHASE_MS   5000
+#define VS_IDLE_CYCLE_MS   10000   /* idle line: shown once per cycle ... */
+#define VS_IDLE_SHOW_MS    3000    /* ... for this long; keys / best wpm alternate per cycle */
 static uint32_t s_mod_until[4];     /* tick when a released modifier's keycap disappears (0 = none) */
 static bool s_mod_prev[4];          /* modifier was held at the last update */
 static int s_mod_n;                 /* keycaps currently drawn */
 static lv_obj_t *s_info;
-static uint8_t s_info_kind = 0xFF;  /* 0 hidden, 1 layer toast, 2 milestone toast, 3 idle line */
+static uint8_t s_info_kind = 0xFF;  /* 0 hidden, 2 milestone toast, 3 idle line */
 static char s_info_txt[32];
 static char s_toast[24];
 static uint8_t s_toast_kind;        /* 1 layer, 2 milestone */
@@ -489,9 +489,9 @@ static void upd_info(void) {
         if (s_toast_kind != 0 && (now - s_toast_t0) < s_toast_ms) {
             kind = s_toast_kind;
             snprintf(txt, sizeof(txt), "%s", s_toast);
-        } else if (st.total > 0) {
+        } else if (st.total > 0 && (now % VS_IDLE_CYCLE_MS) < VS_IDLE_SHOW_MS) {
             char num[16];
-            bool second = ((now / VS_IDLE_PHASE_MS) & 1) != 0 && st.best_wpm > 0;
+            bool second = ((now / VS_IDLE_CYCLE_MS) & 1) != 0 && st.best_wpm > 0;
             kind = 3;
             if (second) {
                 snprintf(txt, sizeof(txt), "// best %u wpm", (unsigned)st.best_wpm);
@@ -722,7 +722,7 @@ static void build(lv_obj_t *parent) {
         vs_show(s_mod[i], false);
     }
 
-    /* Info line in the same spot (layer toast / key-count milestone / idle comment). Hidden at first. */
+    /* Info line in the same spot (key-count milestone / idle comment). Hidden at first. */
     s_info = vs_label(s_root, &JetBrainsMono_Regular_12, p->comment, "", 20, 154, 240, LV_TEXT_ALIGN_CENTER);
     vs_show(s_info, false);
     s_info_kind = 0xFF;
@@ -831,11 +831,6 @@ void vscode_layout_update(const struct prospector_keyboard_data *d) {
         strncpy(st.lname, d->current_layer_name, sizeof(st.lname) - 1);
         st.lname[sizeof(st.lname) - 1] = '\0';
         upd_layer();
-        if (!first) {
-            char nb[20], tb[24];
-            snprintf(tb, sizeof(tb), "-> %s", layer_label(st.layer, st.lname, nb, sizeof(nb)));
-            start_toast(1, tb, VS_TOAST_LAYER_MS);
-        }
     }
     if (first || st.mods != d->modifier_flags) {
         st.mods = d->modifier_flags;
