@@ -514,6 +514,24 @@ static lv_color_t get_rssi_color(uint8_t bars) {
     }
 }
 
+/* ========== Dim when idle ==========
+ * The screen dims to CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS when no keyboard is received
+ * (handled where all keyboards time out) or when no key has been pressed for
+ * CONFIG_PROSPECTOR_SCANNER_TIMEOUT_MS although the keyboard is still advertising (ZMK idle).
+ * A key press or a touch restores the normal brightness. */
+static uint32_t scan_last_activity;
+static bool scan_dimmed;
+
+static void scan_restore_brightness(void) {
+    scan_last_activity = k_uptime_get_32();
+    if (!scan_dimmed) return;
+    scan_dimmed = false;
+    if (!ds_auto_brightness_enabled) {
+        set_pwm_brightness(ds_manual_brightness);
+        LOG_INF("Brightness restored to %d%%", ds_manual_brightness);
+    }
+}
+
 /* ========== Pending Update Timer Callback (runs in main thread) ========== */
 static char last_keyboard_name[MAX_NAME_LEN] = "";  /* Track keyboard changes */
 
@@ -549,6 +567,17 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
         if (key_delta > 0 && vscode_active()) {
             vscode_layout_push_keys(key_delta);
         }
+#ifdef CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS
+        if (key_delta > 0 || lv_display_get_inactive_time(NULL) < 1000) {
+            scan_restore_brightness();
+        } else if (!scan_dimmed && !ds_auto_brightness_enabled &&
+                   CONFIG_PROSPECTOR_SCANNER_TIMEOUT_MS > 0 &&
+                   (k_uptime_get_32() - scan_last_activity) >= CONFIG_PROSPECTOR_SCANNER_TIMEOUT_MS) {
+            scan_dimmed = true;
+            set_pwm_brightness(CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS);
+            LOG_INF("No key activity - dimmed to %d%%", CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS);
+        }
+#endif
     }
 
     /* Check for pending display update */
@@ -584,6 +613,7 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
 #ifdef CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS
             if (CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS > 0) {
                 set_pwm_brightness(CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS);
+                scan_dimmed = true;
                 LOG_INF("Timeout brightness set to %d%%", CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS);
             }
 #endif
@@ -599,10 +629,8 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
             active_battery_count = -1;  /* Force reposition on next battery update */
 
             /* Restore normal brightness when keyboard activity resumes */
-#ifdef CONFIG_PROSPECTOR_FIXED_BRIGHTNESS
-            set_pwm_brightness(CONFIG_PROSPECTOR_FIXED_BRIGHTNESS);
-            LOG_INF("Brightness restored to %d%%", CONFIG_PROSPECTOR_FIXED_BRIGHTNESS);
-#endif
+            scan_dimmed = true;   /* force the restore below even if only the timer had dimmed */
+            scan_restore_brightness();
         }
 
 #ifdef CONFIG_PROSPECTOR_MAIN_VSCODE
