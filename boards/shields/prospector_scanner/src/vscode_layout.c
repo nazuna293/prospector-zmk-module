@@ -128,18 +128,17 @@ static uint16_t s_wave_acc;         /* key presses since the last tick */
 static bool s_wave_dirty;           /* bars need a redraw */
 static uint32_t s_rng = 2463534242u;
 
-/* Modifier keycaps linger after release; the spot below them shows layer changes, key-count
- * milestones and an idle comment line. */
+/* Modifier keycaps linger after release; the spot below them shows layer changes and an idle
+ * comment line. */
 #define VS_MOD_LINGER_MS   800
 #define VS_TOAST_LAYER_MS  1000    /* layer change (not shown when returning to layer 0) */
-#define VS_TOAST_MILE_MS   2500
 #define VS_IDLE_CYCLE_MS   10000   /* idle line: shown once per cycle ... */
 #define VS_IDLE_SHOW_MS    3000    /* ... for this long; keys / best wpm alternate per cycle */
 static uint32_t s_mod_until[4];     /* tick when a released modifier's keycap disappears (0 = none) */
 static bool s_mod_prev[4];          /* modifier was held at the last update */
 static int s_mod_n;                 /* keycaps currently drawn */
 static lv_obj_t *s_info;
-static uint8_t s_info_kind = 0xFF;  /* 0 hidden, 1 layer toast, 2 milestone toast, 3 idle line */
+static uint8_t s_info_kind = 0xFF;  /* 0 hidden, 1 layer toast, 3 idle line */
 static char s_info_txt[32];
 static char s_toast[24];
 static uint8_t s_toast_kind;        /* 1 layer, 2 milestone */
@@ -511,7 +510,7 @@ static void upd_info(void) {
             lv_obj_set_y(s_info, 154);
         } else if (kind != 0) {
             lv_obj_set_style_text_font(s_info, &JetBrainsMono_Bold_16, LV_PART_MAIN);
-            lv_obj_set_style_text_color(s_info, lv_color_hex(kind == 1 ? p->fg : p->number), LV_PART_MAIN);
+            lv_obj_set_style_text_color(s_info, lv_color_hex(p->fg), LV_PART_MAIN);
             lv_obj_set_y(s_info, 152);
         }
         vs_show(s_info, kind != 0);
@@ -723,7 +722,7 @@ static void build(lv_obj_t *parent) {
         vs_show(s_mod[i], false);
     }
 
-    /* Info line in the same spot (layer toast / key-count milestone / idle comment). Hidden at first. */
+    /* Info line in the same spot (layer toast / idle comment). Hidden at first. */
     s_info = vs_label(s_root, &JetBrainsMono_Regular_12, p->comment, "", 20, 154, 240, LV_TEXT_ALIGN_CENTER);
     vs_show(s_info, false);
     s_info_kind = 0xFF;
@@ -876,17 +875,7 @@ void vscode_layout_update_scanner_battery(int level) {
 /* Called every 100 ms with the key presses counted since the last call */
 void vscode_layout_push_keys(uint8_t n) {
     if (n == 0) return;
-    uint32_t before = st.total;
     st.total += n;
-    /* milestones: 100, 500, then every 1000 */
-    if ((before < 100 && st.total >= 100) || (before < 500 && st.total >= 500) ||
-        (before / 1000) != (st.total / 1000)) {
-        uint32_t m = st.total >= 1000 ? (st.total / 1000) * 1000 : (st.total >= 500 ? 500 : 100);
-        char num[16], tb[24];
-        fmt_num(num, sizeof(num), m);
-        snprintf(tb, sizeof(tb), "// %s keys", num);
-        start_toast(2, tb, VS_TOAST_MILE_MS);
-    }
     if (s_wave_timer == NULL) return;   /* not on screen */
     s_wave_acc += n;
     if (s_wave_acc > 100) {
