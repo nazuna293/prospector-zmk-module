@@ -102,7 +102,6 @@ static struct {
     bool has_signal;
     int sbat;              /* scanner's own battery %, -1 = unknown */
     uint32_t total;        /* key presses seen since boot (this session) */
-    uint8_t best_wpm;      /* highest WPM seen since boot */
 } st = {.sbat = -1};   /* kept across destroy/create so the screen redraws at once */
 
 static lv_obj_t *s_parent;
@@ -456,6 +455,47 @@ static void draw_eq(void) {
     }
 }
 
+/* Best WPM over the last ~10 minutes (same span as the heatmap): 20 slots of 30 s, each holding the
+ * highest WPM seen in that slot. The oldest slot is cleared as time moves on. */
+#define VS_BEST_SLOTS   20
+#define VS_BEST_SLOT_MS 30000
+static uint8_t s_best_b[VS_BEST_SLOTS];
+static uint32_t s_best_slot;
+static bool s_best_init;
+
+static void best_roll(void) {
+    uint32_t slot = lv_tick_get() / VS_BEST_SLOT_MS;
+    if (!s_best_init) {
+        s_best_init = true;
+        s_best_slot = slot;
+        return;
+    }
+    uint32_t d = slot - s_best_slot;
+    if (d == 0) return;
+    if (d >= VS_BEST_SLOTS) {
+        memset(s_best_b, 0, sizeof(s_best_b));
+    } else {
+        for (uint32_t k = 1; k <= d; k++) {
+            s_best_b[(s_best_slot + k) % VS_BEST_SLOTS] = 0;
+        }
+    }
+    s_best_slot = slot;
+}
+
+static void best_note(uint8_t wpm) {
+    best_roll();
+    uint8_t *b = &s_best_b[s_best_slot % VS_BEST_SLOTS];
+    if (wpm > *b) *b = wpm;
+}
+
+static uint8_t best_get(void) {
+    uint8_t m = 0;
+    for (int i = 0; i < VS_BEST_SLOTS; i++) {
+        if (s_best_b[i] > m) m = s_best_b[i];
+    }
+    return m;
+}
+
 /* 1234 -> "1,234" */
 static void fmt_num(char *out, size_t n, uint32_t v) {
     if (v >= 1000000) {
@@ -484,6 +524,8 @@ static void upd_info(void) {
     uint32_t now = lv_tick_get();
     uint8_t kind = 0;
     char txt[32] = "";
+    best_roll();
+    uint8_t best = best_get();
 
     if (st.valid && s_mod_n == 0) {
         if (s_toast_kind != 0 && (now - s_toast_t0) < s_toast_ms) {
@@ -491,10 +533,10 @@ static void upd_info(void) {
             snprintf(txt, sizeof(txt), "%s", s_toast);
         } else if (st.total > 0 && (now % VS_IDLE_CYCLE_MS) < VS_IDLE_SHOW_MS) {
             char num[16];
-            bool second = ((now / VS_IDLE_CYCLE_MS) & 1) != 0 && st.best_wpm > 0;
+            bool second = ((now / VS_IDLE_CYCLE_MS) & 1) != 0 && best > 0;
             kind = 3;
             if (second) {
-                snprintf(txt, sizeof(txt), "// best %u wpm", (unsigned)st.best_wpm);
+                snprintf(txt, sizeof(txt), "// 10m best %u wpm", (unsigned)best);
             } else {
                 fmt_num(num, sizeof(num), st.total);
                 snprintf(txt, sizeof(txt), "// %s keys", num);
@@ -815,7 +857,7 @@ void vscode_layout_update(const struct prospector_keyboard_data *d) {
     }
     if (first || st.wpm != d->wpm_value) {
         st.wpm = d->wpm_value;
-        if (st.wpm > st.best_wpm) st.best_wpm = st.wpm;
+        best_note(st.wpm);
         upd_wpm();
     }
     if (first || st.usb != d->usb_connected || st.ble_conn != d->ble_connected ||
